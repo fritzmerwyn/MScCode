@@ -1,6 +1,7 @@
-/* This program *** calculates *** A(p^2) through DSE (iterative Eqs.) and then uses it
-    to calculate the mass through DSE.
-*/
+
+// This program *** calculates *** A(p^2) and B(p^2) from the DSE (iterative Eqs.) and then uses it
+// to calculate the mass, which is B(p^2)/A(p^2).
+
 
 #include <iostream>
 #include <math.h>
@@ -21,7 +22,7 @@ int main(){
   double m_g=132.0;
   double epsilon=10e-9;
   // double epsilon2=10e-2;
-  double m_c = 1e-200;
+  double m_c = 7.8;
   // double m_c_max=10.0;
   // double m_g_max= 250.0;
   // double m_g_min= 120.0;
@@ -44,13 +45,17 @@ int main(){
 
   double** vals = nullptr;
 
-  // Splitting 2d array up (momentum)
+  // Creating abscissas and weights. Using a Log-grid.
   x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA*LAMBDA), absciss_points);
+
+  // Splitting 2d array up (momentum)
   absciss_x = x_and_w[0]; // x_and_w[0];
   weights_w = x_and_w[1]; // x_and_w[1];
 
-  // Splitting 2d array up (angular)
   x_and_w_ang = gauleg(-1.0,1.0, absciss_points);
+
+  // Splitting 2d array up (angular)
+
   absciss_ang = x_and_w_ang[0];
   weights_ang = x_and_w_ang[1];
 
@@ -69,9 +74,9 @@ int main(){
   // Save A and B values from "vals" to File
 
   std::ofstream  fileout;
-  fileout.open("DressingFunctions_A_and_B_mc_1e-200.dat");
+  fileout.open("Data/DressingFunctions_A_and_B_mc_7_8.dat");
   for(int j=1;j<=absciss_points;j++){
-    fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << std::endl;
+    fileout<< j << " " << vals[0][j] << " " << vals[1][j] << std::endl;
   }
   fileout.close ();
 
