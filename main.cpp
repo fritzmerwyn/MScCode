@@ -23,6 +23,9 @@ int main(){
   double epsilon=10e-9;
   // double epsilon2=10e-2;
   double m_c = 7.8;
+  double c = 0.37;
+  double w = 0.4;
+  double g_squared = 0.14;
   // double m_c_max=10.0;
   // double m_g_max= 250.0;
   // double m_g_min= 120.0;
@@ -45,8 +48,20 @@ int main(){
 
   double** vals = nullptr;
 
+  #ifdef MarisTandy
+    std::cout<<std::endl<< "Now Using Maris Tandy Model!" << std::endl;
+  #else
+    std::cout<<std::endl<< "Now Using Contact Model!" << std::endl;
+  #endif
+
   // Creating abscissas and weights. Using a Log-grid.
+  #ifdef loggrid
+  std::cout<<std::endl<< "Log-Grid!" << std::endl << std::endl;
   x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA*LAMBDA), absciss_points);
+  #else
+  std::cout<<std::endl<< "Linear-Grid!" << std::endl << std::endl;
+  x_and_w = gauleg(0.0,LAMBDA*LAMBDA, absciss_points);
+  #endif
 
   // Splitting 2d array up (momentum)
   absciss_x = x_and_w[0]; // x_and_w[0];
@@ -60,23 +75,37 @@ int main(){
   weights_ang = x_and_w_ang[1];
 
   // Save A and B to array "vals"
-  vals = iterate_dressing_functions(epsilon,m_c,m_g,absciss_x,weights_w,absciss_ang,weights_ang);
-  // angint2 =  qgaus1(angkern2, absciss_ang, weights_ang);
+  vals = iterate_dressing_functions(epsilon,m_c,m_g,absciss_x,weights_w,absciss_ang,weights_ang, g_squared, c, w);
+
+  // Preparing for mass function M(p^2) = B(p^2)/A(p^2).
+  double* a_vals = vals[0];
+  double* b_vals = vals[1];
+  double* m_vals = nullptr;
+  m_vals = new double[absciss_points];
+
+  for(int i = 1; i<= absciss_points; i++){
+    if(a_vals[i] == 0.0){
+      m_vals[i] = 0.0;
+    }
+    else{
+      m_vals[i] = b_vals[i]/a_vals[i];
+    }
+  }
 
   // ProgressBar pb(max_step, "Doing stuff");
 
   // Print A (= vals[0][i]) and B (= vals[1][i]) values saved in "vals"
   for(int i=1;i<=absciss_points;i++)
   {
-    std::cout<< i << "\t"<< vals[0][i] << "\t" << vals[1][i]<< "\t" << exp(absciss_x[i])<< std::endl;
+    std::cout<< i << "\t"<< vals[0][i] << "\t" << vals[1][i]<< "\t" << m_vals[i] << "\t" << exp(absciss_x[i])<< std::endl;
   }
 
   // Save A and B values from "vals" to File
 
   std::ofstream  fileout;
-  fileout.open("Data/DressingFunctions_A_and_B_mc_7_8.dat");
+  fileout.open("Data/DressingFunctions_A_and_B_MarisTandy_mc_7_8_log_plin.dat");
   for(int j=1;j<=absciss_points;j++){
-    fileout<< j << " " << vals[0][j] << " " << vals[1][j] << std::endl;
+    fileout<< j << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j]<< std::endl;
   }
   fileout.close ();
 
