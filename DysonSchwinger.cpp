@@ -8,11 +8,11 @@ double gamma_fun(double color = N_C, double flavor = N_F){
   return 12.0/(11.0 * color - 2.0 * flavor);
 }
 
-double running_coupling_MarisTandy(double k_squared, double c, double w){
-  double term1, term2;
-  term1 = ((c*M_PI) / pow(w,7)) * pow(k_squared/(Lambda_0*Lambda_0),2) * exp(- k_squared / (w*w*Lambda_0*Lambda_0));
-  term2 = (M_PI*gamma_fun()*(1.0 - exp(-k_squared/(Lambda_0*Lambda_0)))) / (log(sqrt(M_E*M_E - 1.0 + pow(1.0 + pow(((k_squared) / (Lambda_QCD)),2),2))));
-  return  term1 + term2;
+double running_coupling_MarisTandy(double k_squared, double eta){
+  double infrared, ultraviolet;
+  infrared = M_PI * ((pow(eta,7))/(pow(Lambda_0,4))) * (k_squared * k_squared) * exp( (-(eta*eta)) * (k_squared/(Lambda_0*Lambda_0)) );
+  ultraviolet = (2.0 * M_PI * gamma_fun() * (1.0 - exp(-(k_squared)/(Lambda_t*Lambda_t)) ) ) / (log( M_E*M_E - 1.0 + pow(1.0 + (k_squared/(Lambda_QCD*Lambda_QCD) ),2) ));
+  return  infrared + ultraviolet;
 }
 
 double** initialize_dressing_functionAB(double a0, double b0){
@@ -34,7 +34,7 @@ double** initialize_dressing_functionAB(double a0, double b0){
   return dress2d;
 }
 
-double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double* a_vals, double* b_vals, double g_squared, double c, double w){
+double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double* a_vals, double* b_vals, double g_squared, double eta){
   double s0_a = 0.0;
   double c1,c2; //Prefactor of Integral
   c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
@@ -61,7 +61,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
         else{
         s0_a += weights_w[i] *((c2 * q*q*q*q * a_vals[i]) / (p*p*(q*q * pow(a_vals[i],2) + pow(b_vals[i],2)))) *
                 weights_ang[j] * sqrt(1.0 - z*z) * (p*q*z + (2.0/(k_squared) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z))) *
-                (running_coupling_MarisTandy(k_squared, c, w) / (k_squared));
+                (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
         // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
         // m0B = m_c + c_1*s0_b;
         // std::cout<<std::endl<<std::endl<< j << " iterations used"<<std::endl<<std::endl;
@@ -83,7 +83,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
         else{
         s0_a += weights_w[i] *(1.0/(p*p))*( (c2 * q*q*q * a_vals[i]) / ((q*q * pow(a_vals[i],2) + pow(b_vals[i],2))) ) *
                 weights_ang[j] * sqrt(1.0 - z*z) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z)) *
-                (running_coupling_MarisTandy(k_squared, c, w) / (k_squared));
+                (running_coupling_MarisTandy(k_squared,eta) / (k_squared));
         // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
         // m0B = m_c + c_1*s0_b;
         // std::cout<<std::endl<<std::endl<< j << " iterations used"<<std::endl<<std::endl;
@@ -115,7 +115,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
   return s0_a;
 }
 
-double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double* a_vals, double* b_vals, double g_squared, double c, double w){
+double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double* a_vals, double* b_vals, double g_squared, double eta){
   double s0_b = 0.0;
   double c1,c2;
   c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
@@ -139,7 +139,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
             }
             else{
             s0_b += (weights_w[i] * (c2 * q*q*q*q * b_vals[i] / (q*q * pow(a_vals[i],2) + pow(b_vals[i],2)))) *
-                    (weights_ang[j] * (sqrt(1.0 - z*z)*running_coupling_MarisTandy(k_squared, c, w)/(k_squared))) ;
+                    (weights_ang[j] * (sqrt(1.0 - z*z)*running_coupling_MarisTandy(k_squared,eta)/(k_squared))) ;
             // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
             // m0B = m_c + c_1*s0_b;
             // std::cout<<std::endl<<std::endl<< j << " iterations used"<<std::endl<<std::endl;
@@ -161,7 +161,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
             }
             else{
             s0_b += (weights_w[i] * (c2 * q*q*q * b_vals[i] / (q*q * pow(a_vals[i],2) + pow(b_vals[i],2)))) *
-                    (weights_ang[j] * (sqrt(1.0 - z*z)*(running_coupling_MarisTandy(k_squared, c, w)/(k_squared)))) ;
+                    (weights_ang[j] * (sqrt(1.0 - z*z)*(running_coupling_MarisTandy(k_squared, eta)/(k_squared)))) ;
             // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
             // m0B = m_c + c_1*s0_b;
             // std::cout<<std::endl<<std::endl<< j << " iterations used"<<std::endl<<std::endl;
@@ -193,7 +193,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
   return s0_b;
 }
 
-double** iterate_dressing_functions(double epsilon, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double g_squared, double c, double w){
+double** iterate_dressing_functions(double epsilon, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double g_squared, double eta){
   // double temp_a=1e-20;
   double** init= initialize_dressing_functionAB(1.0,m_c);
   double* a_vals= init[0];
@@ -249,8 +249,8 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
           // a_end = temp_a;
           // temp_a = effectivemassA(epsilon, m_c,m_g,x,w,angint2,temp_b);
           // temp_b = effectivemassB(epsilon, m_c,m_g,x,w,angint,temp_a);
-          new_b[i] += int_coupled_b(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, c, w);
-          new_a[i] += int_coupled_a(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, c, w);
+          new_b[i] += int_coupled_b(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
+          new_a[i] += int_coupled_a(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
           // return 0;
       }
         std::cout<<std::endl;

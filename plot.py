@@ -5,7 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 # from sklearn import preprocessing
 # -- File Import -- #
-data1=np.genfromtxt('Data/DressingFunctions_A_and_B_MarisTandy_mc_7_8_log_plin.dat')
+data1=np.genfromtxt('Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc78_log.dat')
+# data1=np.genfromtxt('Data/.dat')
 # data2=np.genfromtxt('gluonmass_dressingB.dat', delimiter=' ')
 # data3=np.genfromtxt('gluonmass_dressingB78.dat', delimiter=' ')
 # data4=np.genfromtxt('gluonmass22m.dat', delimiter=' ')
@@ -31,7 +32,7 @@ X3= data1[:,0] #np.power((data2[:,0]/1000.0),-2.0) # data[:,1] only gives the se
 # x = np.arange(0.00, 10., 10./len(data1)) # this one is just to display the Exact WF as fine as needed.
 
 # plt.xlim(0.0,10.4)
-# plt.ylim(-0.1,500.2)
+# plt.ylim(-0.1,1.2)
 # plt.yscale('logit')
 # -- Plotting the exact wavfunctions -- #
 # plt.plot(x,2*np.exp(-x),'k', label = '1s - Exact WF')
@@ -48,18 +49,42 @@ X3= data1[:,0] #np.power((data2[:,0]/1000.0),-2.0) # data[:,1] only gives the se
 # plt.plot(x,2*((1.0/3.0)**(1.5))*(1-(x*2.0/3.0)+((x**2))*2.0/27.0)*np.exp(-x*(1.0/3.0)),'k',label = 'Exact WF')
 # -- Plotting the calculated Finite Element Method Wavefunctions -- #
 # plt.plot(X1, Y1,'orange', markersize=4, label=r'Dressing Function A')
-plt.plot(X2, Y2,'r', markersize=4, label=r'Dressing Function B')
-# plt.plot(X3, Y3,'magenta', markersize=4, label=r'Mass Function M w/ m_c=7.8MeV')
+# plt.plot(X2, Y2,'r', markersize=4, label=r'Dressing Function B')
+plt.figure()
+plt.plot(X3, Y3,color = 'magenta',marker = '+', markersize=4, label=r'Mass Function M w/ m_c=0.05 GeV')
 # plt.plot(X4, Y4,'g', markersize=4, label=r'Effective Mass')
 
 
 # plt.plot(y2, X2,'bx-.', markersize=4, label=r'4d FDM 1500 ELMTs')
 # plt.plot(y3, X3,'gx-.', markersize=4, label=r'FEM 1000 Elmts')
 # -- Additional Plot Adjustments -- #
+# plt.yscale('log')
+plt.xscale('log')
 plt.legend()
-plt.title('Dressing Functions A and B')
-plt.xlabel(r'$p$')
-plt.ylabel(r'$B(p^2)$ or $A(p^2)$')
+plt.title('Mass Function M')
+plt.xlabel(r'$p^2$')
+plt.ylabel(r'$M(p^2)$')
 plt.grid(True)
 
+# plt.show()
+plt.figure()
+plt.plot(X1, Y1,'orange', marker = '+',markersize=4, label=r'Dressing Function A')
+
+plt.xscale('log')
+plt.legend()
+plt.title('Dressing Function A')
+plt.xlabel(r'$p^2$')
+plt.ylabel(r'$A(p^2)$')
+plt.grid(True)
+
+# plt.show()
+plt.figure()
+plt.plot(X2, Y2,'r', marker = '+', markersize=4, label=r'Dressing Function B')
+
+plt.xscale('log')
+plt.legend()
+plt.title('Dressing Function B')
+plt.xlabel(r'$p^2$')
+plt.ylabel(r'$B(p^2)$')
+plt.grid(True)
 plt.show()

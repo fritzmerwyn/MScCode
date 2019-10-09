@@ -23,10 +23,9 @@ int main(){
   double m_g=132.0;
   double epsilon=10e-9;
   // double epsilon2=10e-2;
-  double m_c = 0.05;
-  double c = 0.37;
-  double w = 0.4;
-  double g_squared = 4.0;
+  double m_c = 5e-3;
+  double eta = 1.8;
+  double g_squared = 1.0;
   // double m_c_max=10.0;
   // double m_g_max= 250.0;
   // double m_g_min= 120.0;
@@ -59,7 +58,7 @@ int main(){
   #ifdef loggrid
 
   std::cout<<std::endl<< "Log-Grid!" << std::endl << std::endl;
-  x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA*LAMBDA), absciss_points);
+  x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(10e5), absciss_points);
 
   #else
 
@@ -85,7 +84,7 @@ int main(){
   // }
 
   // ##### Save A and B to array "vals" #####
-  vals = iterate_dressing_functions(epsilon,m_c,m_g,absciss_x,weights_w,absciss_ang,weights_ang, g_squared, c, w);
+  vals = iterate_dressing_functions(epsilon,m_c,m_g,absciss_x,weights_w,absciss_ang,weights_ang, g_squared, eta);
 
   // ##### Preparing for mass function M(p^2) = B(p^2)/A(p^2). #####
   double* a_vals = vals[0];
@@ -107,13 +106,13 @@ int main(){
   // ##### Print A (= vals[0][i]) and B (= vals[1][i]) values saved in "vals" #####
   for(int i=1;i<=absciss_points;i++)
   {
-    std::cout<< i << "\t"<< vals[0][i] << "\t" << vals[1][i]<< "\t" << m_vals[i] << "\t" << exp(0.5*absciss_x[i]) << std::endl;
+    std::cout<< i << "\t"<< vals[0][i] << "\t" << vals[1][i]<< "\t" << m_vals[i] << "\t" << absciss_x[i] << std::endl;
   }
 
   // ##### Save A and B values from "vals" to File #####
   ProgressBar sd(absciss_points, "Saving Data to File");
   std::ofstream  fileout;
-  fileout.open("Data/DressingFunctions_A_and_B_MarisTandy_gsq_1.0_mc78_log.dat");
+  fileout.open("Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc78_log.dat");
   for(int j=1;j<=absciss_points;j++){
     ++sd;
     fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j]<< std::endl;
