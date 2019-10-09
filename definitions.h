@@ -1,7 +1,8 @@
 // Cutoff Values
 
-#define LAMBDA_MIN 1e-3
+#define LAMBDA_MIN 1e-4
 #define LAMBDA 10000.0
+#define LAMBDA_squared 10e5
 
 // QCD Values
 #define N_C 3.0

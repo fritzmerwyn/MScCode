@@ -49,7 +49,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
       #ifdef loggrid
 
       // c2 = g_squared/(2.0*48.0*pow(M_PI,3.0));
-      c2 = g_squared/(2.0*3.0*pow(M_PI,3.0));
+      c2 = 4.0/(2.0*3.0*pow(M_PI,2.0));
 
       q = exp(0.5*absciss_x[i]);
       for(int j=0;j<=absciss_points;j++){
@@ -71,8 +71,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
 
       #else
 
-      c2 = g_squared/(48.0*pow(M_PI,3.0));
-      // c2 = g_squared/(3.0*pow(M_PI,3.0));
+      c2 = g_squared/(3.0*pow(M_PI,3.0));
       q = absciss_x[i];
       for(int j=0;j<=absciss_points;j++){
         z = absciss_ang[j];
@@ -127,7 +126,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
 
           #ifdef loggrid
 
-          c2 = (g_squared/(2*pow(M_PI,3)));
+          c2 = (4.0/(2*pow(M_PI,2.0)));
 
           q = exp(0.5*absciss_x[i]);
 

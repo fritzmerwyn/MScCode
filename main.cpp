@@ -20,7 +20,7 @@ int main(){
 
   // ##### Constants ###### //
 
-  double m_g=132.0;
+  double m_g=0.132;
   double epsilon=10e-9;
   // double epsilon2=10e-2;
   double m_c = 5e-3;
@@ -58,7 +58,7 @@ int main(){
   #ifdef loggrid
 
   std::cout<<std::endl<< "Log-Grid!" << std::endl << std::endl;
-  x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(10e5), absciss_points);
+  x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA_squared), absciss_points);
 
   #else
 
