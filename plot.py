@@ -3,6 +3,11 @@
 # -- Library Imports -- #
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+## for Palatino and other serif fonts use:
+#rc('font',**{'family':'serif','serif':['Palatino']})
+rc('text', usetex=True)
 # from sklearn import preprocessing
 # -- File Import -- #
 data1=np.genfromtxt('Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc78_log.dat')
@@ -51,13 +56,14 @@ X3= data1[:,0] #np.power((data2[:,0]/1000.0),-2.0) # data[:,1] only gives the se
 # plt.plot(X1, Y1,'orange', markersize=4, label=r'Dressing Function A')
 # plt.plot(X2, Y2,'r', markersize=4, label=r'Dressing Function B')
 plt.figure()
-plt.plot(X3, Y3,color = 'magenta',marker = '+', markersize=4, label=r'Mass Function M w/ m_c=0.05 GeV')
+plt.plot(X3, Y3,color = 'magenta',marker = '+', markersize=4, label=r'Mass Function M with mc=0.005 GeV')
 # plt.plot(X4, Y4,'g', markersize=4, label=r'Effective Mass')
 
 
 # plt.plot(y2, X2,'bx-.', markersize=4, label=r'4d FDM 1500 ELMTs')
 # plt.plot(y3, X3,'gx-.', markersize=4, label=r'FEM 1000 Elmts')
 # -- Additional Plot Adjustments -- #
+plt.xlim(0.0001,1000.4)
 # plt.yscale('log')
 plt.xscale('log')
 plt.legend()

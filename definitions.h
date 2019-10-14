@@ -10,11 +10,12 @@
 #define Lambda_QCD 0.234
 #define Lambda_t 1.0
 #define Lambda_0 0.72
+#define mu_renorm 19.0
 
 // Numerical Parameters
 #define loggrid
 
-#define absciss_points 300
+#define absciss_points 150
 #define max_step 2000
 #define max_iter 1300
 

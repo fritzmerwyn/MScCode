@@ -9,7 +9,7 @@
 #include <string>
 #include "definitions.h"
 #include "help_numerics.h"
-#include "DysonSchwinger.h"
+#include "DysonSchwinger_renormalized.h"
 #include "progressbar.hpp"
 
 
@@ -23,7 +23,7 @@ int main(){
   double m_g=0.132;
   double epsilon=10e-9;
   // double epsilon2=10e-2;
-  double m_c = 5e-3;
+  double m_c = 0.1;
   double eta = 1.8;
   double g_squared = 1.0;
   // double m_c_max=10.0;
@@ -84,7 +84,7 @@ int main(){
   // }
 
   // ##### Save A and B to array "vals" #####
-  vals = iterate_dressing_functions(epsilon,m_c,m_g,absciss_x,weights_w,absciss_ang,weights_ang, g_squared, eta);
+  vals = iterate_dressing_functions(epsilon,m_c,m_g,absciss_x,weights_w,absciss_ang,weights_ang, g_squared, eta, mu_renorm);
 
   // ##### Preparing for mass function M(p^2) = B(p^2)/A(p^2). #####
   double* a_vals = vals[0];
