@@ -22,8 +22,8 @@ int main(){
 
   double m_g=0.132;
   double epsilon=10e-9;
+  double m_c = 0.0037;
   // double epsilon2=10e-2;
-  double m_c = 0.1;
   double eta = 1.8;
   double g_squared = 1.0;
   // double m_c_max=10.0;
@@ -58,7 +58,7 @@ int main(){
   #ifdef loggrid
 
   std::cout<<std::endl<< "Log-Grid!" << std::endl << std::endl;
-  x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA_squared), absciss_points);
+  x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA*LAMBDA), absciss_points);
 
   #else
 
@@ -113,6 +113,10 @@ int main(){
   ProgressBar sd(absciss_points, "Saving Data to File");
   std::ofstream  fileout;
   fileout.open("Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc78_log.dat");
+  fileout << "# Parameters used: " << "mc(GeV): "<< m_c<<" LAMBDA(GeV) in UV-Cuttoff in log(LAMBDA*LAMBDA): "<< LAMBDA << "LAMBDA_MIN(GeV) in IR-Cuttoff in log(LAMBDA_MIN*LAMBDA_MIN): "<< LAMBDA_MIN<< " gamma_m: "<< gamma_fun(N_C, N_F) <<std::endl;
+  fileout << "# mu(GeV): "<< mu_renorm << " Lambda_QCD(GeV): "<< Lambda_QCD << " Lambda_t(GeV): "<< Lambda_t<< " Lambda_0 " <<Lambda_0<<std::endl;
+  fileout << "# abscissae used: "<< absciss_points <<std::endl;
+  fileout << "# p^2"<< " "<< "A(p^2)"<< " "<< "B(p^2)"<< " "<< "M(p^2)" << std::endl;
   for(int j=1;j<=absciss_points;j++){
     ++sd;
     fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j]<< std::endl;

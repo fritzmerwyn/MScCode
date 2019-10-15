@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <omp.h>
 #include "help_numerics.h"
 #include "DysonSchwinger.h"
 #include "progressbar.hpp"
@@ -38,11 +39,8 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
   double s0_a = 0.0;
   double c1,c2; //Prefactor of Integral
   c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
-  double q,z, k_squared;
+  double q,z, k_squared, angularpta;
   for(int i=0;i<=absciss_points;i++){
-
-
-
 
 #ifdef MarisTandy
 
@@ -52,23 +50,27 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
       c2 = 4.0/(2.0*3.0*pow(M_PI,2.0));
 
       q = exp(0.5*absciss_x[i]);
-      for(int j=0;j<=absciss_points;j++){
+#pragma omp parallel for private(z, k_squared) default(none) shared(p, q, weights_w, weights_ang, i,absciss_ang, absciss_x, c2, b_vals, a_vals, eta) reduction(+:s0_a)
+      for(int j=0;j<=ang_absciss_points;j++){
         z = absciss_ang[j];
         k_squared = p*p + q*q - 2.0*p*q*z;
         if(p==0.0){
-          return 0.0;
+          // return 0.0;
         }
         else{
         s0_a += weights_w[i] *((c2 * q*q*q*q * a_vals[i]) / (p*p*(q*q * pow(a_vals[i],2.0) + pow(b_vals[i],2.0)))) *
                 weights_ang[j] * sqrt(1.0 - z*z) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z))   *
                 (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
+        // angularpta = weights_ang[j] * sqrt(1.0 - z*z) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z))   *
+        // (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
+
+
         // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
         // m0B = m_c + c_1*s0_b;
-        // std::cout<<std::endl<<std::endl<< j << " iterations used"<<std::endl<<std::endl;
+        // std::cout<<std::endl<<std::endl<< j << " iterations, "<< angularpta << " angular part"<<std::endl<<std::endl;
         // return 0;
         }
       }
-
       #else
 
       c2 = g_squared/(3.0*pow(M_PI,3.0));
@@ -129,12 +131,12 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
           c2 = (4.0/(2.0*pow(M_PI,2.0)));
 
           q = exp(0.5*absciss_x[i]);
-
-          for(int j=0;j<=absciss_points;j++){
+#pragma omp parallel for private(z, k_squared) default(none) shared(p, q, weights_w, weights_ang, i,absciss_ang, absciss_x, c2, b_vals, a_vals, eta) reduction(+:s0_b)
+          for(int j=0;j<=ang_absciss_points;j++){
             z = absciss_ang[j];
             k_squared = p*p + q*q - 2.0*p*q*z;
             if(p==0.0){
-              return 0.0;
+              // return 0.0;
             }
             else{
             s0_b += (weights_w[i] * (c2 * q*q*q*q * b_vals[i] / (q*q * pow(a_vals[i],2.0) + pow(b_vals[i],2.0)))) *
@@ -201,7 +203,7 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
 
   double new_b[absciss_points];
   double new_a[absciss_points];
-  double z2, zm, new_siga, new_sigb;
+  double z2, z2_old, zm, new_siga, new_sigb;
   double renorm_a[absciss_points];
   double renorm_b[absciss_points];
 
@@ -216,8 +218,8 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
   double a_renorm_end=1.0;
   double b_renorm_end=1.0;
 
-  z2 = 1.0;
   zm = 1.0;
+  z2 = 1.0;
 
 
   ProgressBar pb(max_iter, "Iterating Dressing Functions A and B");
@@ -254,32 +256,19 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
             p = absciss_x[i];
 
 #endif
-          if(m_c==0){
-            new_a[i] = 1.0;
-            new_a[i] += z2*int_coupled_a(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-
-            new_b[i] += z2*int_coupled_b(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-
-          }
-          else{
 
           new_a[i] = z2*1.0;
-          new_b[i] = m_c;
-                          // return 0;
-          // a_end = temp_a;
-          // temp_a = effectivemassA(epsilon, m_c,m_g,x,w,angint2,temp_b);
-          // temp_b = effectivemassB(epsilon, m_c,m_g,x,w,angint,temp_a);
-          new_a[i] += z2*int_coupled_a(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-          new_b[i] += z2*(int_coupled_b(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta)
-                    -  int_coupled_b(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta));
-          // return 0;
-        }
+          new_b[i] = z2*zm*m_c;
+
+          new_a[i] += z2*z2*int_coupled_a(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
+          new_b[i] += z2*z2*int_coupled_b(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
 
       }
+
           new_siga = int_coupled_a(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
           new_sigb = int_coupled_b(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-          z2 = 1.0/(1.0 + new_siga);
-          zm = 1.0/z2 - new_sigb/(m_c);
+          z2 = 1.0/(1.0 + z2*new_siga);
+          zm = 1.0/z2 - z2*new_sigb/m_c;
           std::cout << std::endl <<"z2 is "<< z2 << "\t"<< "zm is " << zm <<std::endl;
 
 

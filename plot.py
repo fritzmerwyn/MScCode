@@ -10,7 +10,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 # from sklearn import preprocessing
 # -- File Import -- #
-data1=np.genfromtxt('Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc78_log.dat')
+data1=np.genfromtxt('Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc38_log_test_1024ang.dat')
 # data1=np.genfromtxt('Data/.dat')
 # data2=np.genfromtxt('gluonmass_dressingB.dat', delimiter=' ')
 # data3=np.genfromtxt('gluonmass_dressingB78.dat', delimiter=' ')

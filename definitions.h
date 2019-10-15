@@ -1,7 +1,7 @@
 // Cutoff Values
 
 #define LAMBDA_MIN 1e-4
-#define LAMBDA 10000.0
+#define LAMBDA 1.0e5
 #define LAMBDA_squared 10e5
 
 // QCD Values
@@ -15,7 +15,8 @@
 // Numerical Parameters
 #define loggrid
 
-#define absciss_points 150
+#define absciss_points 300
+#define ang_absciss_points 750
 #define max_step 2000
 #define max_iter 1300
 
