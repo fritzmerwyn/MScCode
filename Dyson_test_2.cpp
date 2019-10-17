@@ -16,6 +16,75 @@ double running_coupling_MarisTandy(double k_squared, double eta){
   return  infrared + ultraviolet;
 }
 
+double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, double* absciss_ang, double* weights_ang, double g_squared, double eta, double mu){
+
+  double q, c2_a, c2_b, p, z, yota, k_squared, s0_a, s0_b;
+
+  c2_a = 4.0/(2.0*3.0*pow(M_PI,2.0));
+  c2_b = 4.0/(2.0*pow(M_PI,2.0));
+
+
+  double*** temp_matrix = nullptr;
+  temp_matrix = new double**[2];
+  temp_matrix[0] = nullptr;
+  temp_matrix[1] = nullptr;
+  temp_matrix[0] = new double*[absciss_points];
+  temp_matrix[1] = new double*[absciss_points];
+
+#pragma omp parallel for default(none) shared(temp_matrix)
+  for(int i=0;i<absciss_points;i++){
+    temp_matrix[0][i] = nullptr;
+    temp_matrix[1][i] = nullptr;
+    temp_matrix[0][i] = new double[absciss_points + 1];
+    temp_matrix[1][i] = new double[absciss_points + 1];
+  }
+
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+
+    q = exp(0.5*absciss_x[q_idx]);
+
+    for(int p_idx = 0; p_idx < absciss_points + 1; p_idx++){
+
+      if(p_idx == absciss_points){
+        p = mu;
+      }
+
+      else{
+      p = exp(0.5*absciss_x[p_idx]);
+      }
+      s0_a=0.0;
+      s0_b=0.0;
+
+#pragma omp parallel for private(z, yota, k_squared) default(none) shared(p, q, weights_ang, absciss_ang, absciss_x, c2_a, c2_b, eta, mu) reduction(+:s0_a, s0_b)
+            for(int ang_idx=0;ang_idx<ang_absciss_points;ang_idx++){ //START AT J=1 because 0th abscissa is 0. And 0 no good.(look at bottom of main)
+              yota = absciss_ang[ang_idx];
+              z = cos(yota);
+              k_squared = p*p + q*q - 2.0*p*q*z;
+              if(p==0.0){
+
+              }
+              else{
+              s0_a += (c2_a * q*q*q*q)* (1.0/(p*p)) *
+                      weights_ang[ang_idx] * sin(yota)*sin(yota) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z))   *
+                      (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
+
+              s0_b += (c2_b * q*q*q*q) *
+                      weights_ang[ang_idx] * (sin(yota)*sin(yota) *running_coupling_MarisTandy(k_squared,eta)/(k_squared));
+              }
+            }
+
+      temp_matrix[0][q_idx][p_idx] = s0_a;
+      temp_matrix[1][q_idx][p_idx] = s0_b;
+
+    }
+  }
+
+  std::cout<<std::endl;
+  std::cout<<"Angular Matrix initialized"<< std::endl;
+  return temp_matrix;
+
+}
+
 double** initialize_dressing_functionAB(double a0, double b0){
   double** dress2d = nullptr;
   dress2d = new double*[2];
@@ -35,47 +104,29 @@ double** initialize_dressing_functionAB(double a0, double b0){
   return dress2d;
 }
 
-double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double* a_vals, double* b_vals, double g_squared, double eta){
+double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weights_w, double* a_vals, double* b_vals, int p_idx, double m_g){
   double s0_a = 0.0;
   double c1,c2; //Prefactor of Integral
   c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
   double q, z, yota, k_squared, angularpta;
-  for(int i=0;i<absciss_points;i++){
+
+#pragma omp parallel for private(q) default(none) shared(weights_w, absciss_x, a_vals, b_vals, p_idx, angular_matrix) reduction(+:s0_a)
+  for(int q_idx=0;q_idx<absciss_points;q_idx++){
 
 #ifdef MarisTandy
 
       #ifdef loggrid
 
       // c2 = g_squared/(2.0*48.0*pow(M_PI,3.0));
-      c2 = 4.0/(2.0*3.0*pow(M_PI,2.0));
 
-      q = exp(0.5*absciss_x[i]);
-#pragma omp parallel for private(z, yota, k_squared) default(none) shared(p, q, weights_w, weights_ang, i, absciss_ang, absciss_x, c2, b_vals, a_vals, eta) reduction(+:s0_a)
-      for(int j=0;j<ang_absciss_points;j++){ //START AT J=1 because 0th abscissa is 0. And 0 no good.(look at bottom of main)
-        z = cos(absciss_ang[j]);
-        yota = absciss_ang[j];
-        k_squared = p*p + q*q - 2.0*p*q*z;
-        if(p==0.0){
-          // return 0.0;
-        }
-        else{
-        s0_a += weights_w[i] *((c2 * q*q*q*q * a_vals[i]) / (p*p*(q*q * pow(a_vals[i],2.0) + pow(b_vals[i],2.0)))) *
-                weights_ang[j] * sin(yota)*sin(yota) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z))   *
-                (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
-        // angularpta = weights_ang[j] * sqrt(1.0 - z*z) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z))   *
-        // (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
+      q = exp(0.5*absciss_x[q_idx]);
 
+      s0_a += (weights_w[q_idx] * angular_matrix[0][q_idx][p_idx] * a_vals[q_idx] / (pow(q*a_vals[q_idx],2.0) + pow(b_vals[q_idx],2.0)));
 
-        // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
-        // m0B = m_c + c_1*s0_b;
-        // std::cout<<std::endl<<std::endl<< j << " iterations, "<< angularpta << " angular part"<<std::endl<<std::endl;
-        // return 0;
-        }
-      }
       #else
 
       c2 = g_squared/(3.0*pow(M_PI,3.0));
-      q = absciss_x[i];
+      q = absciss_x[q_idx];
       for(int j=0;j<absciss_points;j++){
         z = cos(absciss_ang[j]);
         yota = absciss_points[j];
@@ -84,7 +135,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
           return 0.0;
         }
         else{
-        s0_a += weights_w[i] *(1.0/(p*p))*( (c2 * q*q*q * a_vals[i]) / ((q*q * pow(a_vals[i],2.0) + pow(b_vals[i],2.0))) ) *
+        s0_a += weights_w[q_idx] *(1.0/(p*p))*( (c2 * q*q*q * a_vals[q_idx]) / ((q*q * pow(a_vals[q_idx],2.0) + pow(b_vals[q_idx],2.0))) ) *
                 weights_ang[j] * sin(yota)*sin(yota) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z)) *
                 (running_coupling_MarisTandy(k_squared,eta) / (k_squared));
         // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
@@ -106,7 +157,7 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
           return 0.0;
         }
         else{
-        s0_a += weights_w[i]*((c1 * q*q*q*q*q * a_vals[i])/(p*(q*q*pow(a_vals[i],2)+pow(b_vals[i],2))))*
+        s0_a += weights_w[q_idx]*((c1 * q*q*q*q*q * a_vals[q_idx])/(p*(q*q*pow(a_vals[q_idx],2)+pow(b_vals[q_idx],2))))*
                 (weights_ang[j]*sin(yota)*sin(yota)*z);
         // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
         // m0B = m_c + c_1*s0_b;
@@ -119,44 +170,29 @@ double int_coupled_a(double p, double m_c, double m_g, double* absciss_x, double
   return s0_a;
 }
 
-double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double* a_vals, double* b_vals, double g_squared, double eta){
+double int_coupled_b(double*** angular_matrix, double* absciss_x, double* weights_w, double* a_vals, double* b_vals, int p_idx, double m_g){
   double s0_b = 0.0;
   double c1,c2;
   c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
   double q, z, yota, k_squared;
-  for(int i=0;i<absciss_points;i++){
+
+#pragma omp parallel for private(q) default(none) shared(weights_w, absciss_x, a_vals, b_vals, p_idx, angular_matrix) reduction(+:s0_b)
+  for(int q_idx=0;q_idx<absciss_points;q_idx++){
 
 
 #ifdef MarisTandy
 
-          #ifdef loggrid
+      #ifdef loggrid
 
-          c2 = (4.0/(2.0*pow(M_PI,2.0)));
+        q = exp(0.5*absciss_x[q_idx]);
 
-          q = exp(0.5*absciss_x[i]);
-#pragma omp parallel for private(z, yota, k_squared) default(none) shared(p, q, weights_w, weights_ang, i,absciss_ang, absciss_x, c2, b_vals, a_vals, eta) reduction(+:s0_b)
-          for(int j=0;j<ang_absciss_points;j++){ //START AT J=1 because 0th abscissa is 0. And 0 no good.(look at bottom of main)
-            z = cos(absciss_ang[j]);
-            yota = absciss_ang[j];
-            k_squared = p*p + q*q - 2.0*p*q*z;
-            if(p==0.0){
-              // return 0.0;
-            }
-            else{
-            s0_b += (weights_w[i] * (c2 * q*q*q*q * b_vals[i] / (q*q * pow(a_vals[i],2.0) + pow(b_vals[i],2.0)))) *
-                    weights_ang[j] * (sin(yota)*sin(yota) *running_coupling_MarisTandy(k_squared,eta)/(k_squared));
-            // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
-            // m0B = m_c + c_1*s0_b;
-            // std::cout<<std::endl<<std::endl<< j << " iterations used"<<std::endl<<std::endl;
-            // return 0;
-            }
-          }
+        s0_b += (weights_w[q_idx] * angular_matrix[1][q_idx][p_idx] * b_vals[q_idx] / (pow(q * a_vals[q_idx],2.0) + pow(b_vals[q_idx],2.0)));
 
-          #else
+      #else
 
           c2 = (g_squared/pow(M_PI,3.0));
 
-          q = absciss_x[i];
+          q = absciss_x[q_idx];
 
           for(int j=0;j<absciss_points;j++){
             z = cos(absciss_ang[j]);
@@ -166,7 +202,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
               return 0.0;
             }
             else{
-            s0_b += (weights_w[i] * (c2 * q*q*q * b_vals[i] / (q*q * pow(a_vals[i],2) + pow(b_vals[i],2)))) *
+            s0_b += (weights_w[q_idx] * (c2 * q*q*q * b_vals[q_idx] / (q*q * pow(a_vals[q_idx],2) + pow(b_vals[q_idx],2)))) *
                     (weights_ang[j] * (sin(yota)*sin(yota)*(running_coupling_MarisTandy(k_squared, eta)/(k_squared)))) ;
             // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
             // m0B = m_c + c_1*s0_b;
@@ -175,7 +211,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
             }
           }
 
-          #endif
+      #endif
 
 
 #else
@@ -185,7 +221,7 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
       z = cos(absciss_ang[j]);
       yota = absciss_ang[j];
         // mend=m0B;
-        s0_b += weights_w[i]*((c1 * q*q*q*q * b_vals[i])/(q*q*pow(a_vals[i],2)+pow(b_vals[i],2)))*
+        s0_b += weights_w[q_idx]*((c1 * q*q*q*q * b_vals[q_idx])/(q*q*pow(a_vals[q_idx],2)+pow(b_vals[q_idx],2)))*
                 (weights_ang[j]*sin(yota)*sin(yota));
         // s0_b = weights_w[i]*((exp(2*q)*b_vals[i])/(exp(q)+pow(b_vals[i],2)))*qgaus1(angkern,absciss_ang,weights_ang);
         // m0B = m_c + c_1*s0_b;
@@ -200,8 +236,12 @@ double int_coupled_b(double p, double m_c, double m_g, double* absciss_x, double
   return s0_b;
 }
 
+
+
 double** iterate_dressing_functions(double epsilon, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double g_squared, double eta, double mu){
   // double temp_a=1e-20;
+  double*** angular_matrix = initialize_matrix(epsilon,m_c,absciss_x, absciss_ang, weights_ang,g_squared,eta,mu);
+
   double** init= initialize_dressing_functionAB(1.0,m_c);
   double* a_vals= init[0];
   double* b_vals= init[1];
@@ -246,37 +286,29 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
       }
       else{
 
-        a_start = new_a[absciss_points - 1];
-        b_start = new_b[absciss_points - 1];
-        ProgressBar ABupdate(absciss_points, "Calculating New A and B");
+        a_start = new_a[absciss_points-1];
+        b_start = new_b[absciss_points-1];
+        // ProgressBar ABupdate(absciss_points, "Calculating New A and B");
 
-        for(int i=0;i<absciss_points;i++){ //Integration over q
-          ++ABupdate;
+        for(int p_idx=0;p_idx<absciss_points;p_idx++){ //Integration over q
+          // ++ABupdate;
 
-#ifdef loggrid
+          new_a[p_idx] = z2*1.0;
+          new_b[p_idx] = z2*zm*m_c;
 
-            p = exp(0.5*absciss_x[i]);
-
-#else
-
-            p = absciss_x[i];
-
-#endif
-
-          new_a[i] = z2*1.0;
-          new_b[i] = z2*zm*m_c;
-
-          new_a[i] += z2*z2*int_coupled_a(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-          new_b[i] += z2*z2*int_coupled_b(p, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
+          new_a[p_idx] += z2*z2*int_coupled_a(angular_matrix, absciss_x, weights_w, a_vals, b_vals, p_idx, m_g);
+          new_b[p_idx] += z2*z2*int_coupled_b(angular_matrix, absciss_x, weights_w, a_vals, b_vals, p_idx, m_g);
 
       }
 
           // new_siga = int_coupled_a(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-          new_sigb = int_coupled_b(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
-          new_siga = int_coupled_a(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
+          new_siga = int_coupled_a(angular_matrix, absciss_x, weights_w, a_vals, b_vals, absciss_points, m_g);
+          new_sigb = int_coupled_b(angular_matrix, absciss_x, weights_w, a_vals, b_vals, absciss_points, m_g);
+
           z2 = 1.0/(1.0 + z2*new_siga);
           zm = 1.0/z2 - z2*new_sigb/m_c;
           std::cout << std::endl <<"z2 is "<< z2 << "\t"<< "zm is " << zm <<std::endl;
+
 
 
         std::cout<<std::endl;
@@ -299,17 +331,3 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
   }
   return 0;
 }
-
-// double* interpol(double p, double mc, double mg, double* a_values, double*b_values, double* renorm, double* eta_and_lambda,
-//         double* absci_x, double* absci_ang, double* weight_x, double* weight_ang)
-// {
-//     double* vals = new double[3];
-//     vals[0] = renorm[0] + pow(renorm[0], 2) * integrate_coupled_a(p, mg, eta_and_lambda, a_values, b_values, absci_x,
-//             absci_ang, weight_x, weight_ang);
-//
-//     vals[1] = renorm[0] * renorm[1] * mc + pow(renorm[0], 2) * integrate_coupled_b(p, mg, eta_and_lambda, a_values,
-//             b_values, absci_x, absci_ang, weight_x, weight_ang);
-//     vals[2] = vals[1] / vals[0];
-//
-//     return vals;
-// }

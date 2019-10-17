@@ -15,8 +15,8 @@
 // Numerical Parameters
 #define loggrid
 
-#define absciss_points 300
-#define ang_absciss_points 750
+#define absciss_points 600
+#define ang_absciss_points 128
 #define max_step 2000
 #define max_iter 1300
 

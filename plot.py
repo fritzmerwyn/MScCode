@@ -4,13 +4,13 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
-#rc('font',**{'family':'serif','serif':['Palatino']})
+# rc('font',**{'family':'serif','serif':['Palatino']})
 rc('text', usetex=True)
 # from sklearn import preprocessing
 # -- File Import -- #
-data1=np.genfromtxt('Data/DressingFunctions_A_and_B_MarisTandy_new_gsq_1.0_mc38_log_test_1024ang.dat')
+data1=np.genfromtxt('Data/DressingFunctions_A_and_B_and_M_log_600_128ang_test.dat')
 # data1=np.genfromtxt('Data/.dat')
 # data2=np.genfromtxt('gluonmass_dressingB.dat', delimiter=' ')
 # data3=np.genfromtxt('gluonmass_dressingB78.dat', delimiter=' ')

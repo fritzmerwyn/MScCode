@@ -38,7 +38,7 @@ m=(n+1)/2;
 xm=0.5*(x2+x1);
 xl=0.5*(x2-x1);
 for(i=1;i<=m;i++) {
-  z=cos(3.141592654*(i-0.25)/(n+0.5));
+  z=cos(M_PI*(i-0.25)/(n+0.5));
   // Starting with the above approximation to the ith root, we enter the main loop of refinement by Newton’s method.
   do {
     p1=1.0;
