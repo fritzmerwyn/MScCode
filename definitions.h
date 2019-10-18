@@ -1,6 +1,6 @@
 // Cutoff Values
 
-#define LAMBDA_MIN 1e-4
+#define LAMBDA_MIN 1e-3
 #define LAMBDA 1.0e5
 #define LAMBDA_squared 10e5
 
@@ -18,7 +18,7 @@
 #define absciss_points 600
 #define ang_absciss_points 128
 #define max_step 2000
-#define max_iter 1300
+#define max_iter 200
 
 // Models
 #define MarisTandy
