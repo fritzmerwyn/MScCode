@@ -38,8 +38,8 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
     temp_matrix[0][i] = new double[absciss_points + 1];
     temp_matrix[1][i] = new double[absciss_points + 1];
   }
-
-  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+  ProgressBar initmatrix(absciss_points,"Initializing Angular Matrix: ");
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++, ++initmatrix){
 
     q = exp(0.5*absciss_x[q_idx]);
 
@@ -52,6 +52,7 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
       else{
       p = exp(0.5*absciss_x[p_idx]);
       }
+
       s0_a=0.0;
       s0_b=0.0;
 
@@ -73,8 +74,10 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
               }
             }
 
-      temp_matrix[0][q_idx][p_idx] = s0_a;
-      temp_matrix[1][q_idx][p_idx] = s0_b;
+      std::swap(temp_matrix[0][q_idx][p_idx],s0_a);
+      std::swap(temp_matrix[1][q_idx][p_idx],s0_b);
+      // temp_matrix[0][q_idx][p_idx] = s0_a;
+      // temp_matrix[1][q_idx][p_idx] = s0_b;
 
     }
   }
@@ -279,8 +282,8 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
         // break;
         double** dress2d = nullptr;
         dress2d = new double*[2];
-        dress2d[0] = a_vals;
-        dress2d[1] = b_vals;
+        std::swap(dress2d[0],a_vals);
+        std::swap(dress2d[1],b_vals);
         return dress2d;
 
       }
@@ -290,6 +293,8 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
         b_start = new_b[absciss_points-1];
         // ProgressBar ABupdate(absciss_points, "Calculating New A and B");
 
+// #pragma omp parallel for private(angular_matrix) default(none) shared(z2, zm, m_c, absciss_x, weights_w, a_vals, b_vals, m_g) reduction(+:new_a, new_b)
+// #pragma omp parallel for private(none) default(none) shared(zm,z2,m_c, angular_matrix, absciss_x, weights_w, a_vals, b_vals, m_g) reduction(+:new_a, new_b)
         for(int p_idx=0;p_idx<absciss_points;p_idx++){ //Integration over q
           // ++ABupdate;
 
@@ -307,25 +312,28 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
 
           z2 = 1.0/(1.0 + z2*new_siga);
           zm = 1.0/z2 - z2*new_sigb/m_c;
-          std::cout << std::endl <<"z2 is "<< z2 << "\t"<< "zm is " << zm <<std::endl;
+          // std::cout << std::endl <<"z2 is "<< z2 << "\t"<< "zm is " << zm <<std::endl;
 
 
 
-        std::cout<<std::endl;
-        if(j%1==0 && j !=0){
-        std::cout<<std::endl<<"new_a[40] = "<< new_a[40] << "\t" << "new_b[40] = "<< new_b[40] << "\t" << "a_vals[40] = "<< a_vals[40] << "\t" << "b_vals[40] = "<< b_vals[40] <<std::endl;
+        // std::cout<<std::endl;
+        // if(j%1==0 && j !=0){
+        // std::cout<<std::endl<<"new_a[40] = "<< new_a[40] << "\t" << "new_b[40] = "<< new_b[40] << "\t" << "a_vals[40] = "<< a_vals[40] << "\t" << "b_vals[40] = "<< b_vals[40] <<std::endl;
         // std::cout<<"a_vals[40] = " << a_vals[40] << std::endl;
-        }
+        // }
 
         for(int k=0; k<absciss_points; k++){
 
-          a_vals[k] = new_a[k];
-          b_vals[k] = new_b[k];
+          std::swap(a_vals[k],new_a[k]);
+          std::swap(b_vals[k],new_b[k]);
+
+          // a_vals[k] = new_a[k];
+          // b_vals[k] = new_b[k];
 
         }
         // std::cout<<"a_vals[40] = " << a_vals[40] << std::endl;
-      a_end = new_a[absciss_points-1];
-      b_end = new_b[absciss_points-1];
+      std::swap(a_end,new_a[absciss_points-1]);
+      std::swap(b_end,new_b[absciss_points-1]);
 
     }
   }
