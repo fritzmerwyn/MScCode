@@ -21,7 +21,7 @@ int main(){
   // ##### Constants ###### //
 
   double m_g=0.132;
-  double epsilon=10e-9;
+  double epsilon=1.0e-10;
   double m_c = 0.0037;
   // double epsilon2=10e-2;
   double eta = 1.8;
