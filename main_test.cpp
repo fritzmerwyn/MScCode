@@ -78,18 +78,21 @@ int main(){
   absciss_ang = x_and_w_ang[0] + 1;
   weights_ang = x_and_w_ang[1] + 1;
 
+  std::cout<<"Weights and abscissae calculated"<<std::endl;
+  
+
   // for(int i=0;i<ang_absciss_points;i++)
   // {
   //   std::cout<< i << "\t"<< absciss_ang[i] << "\t" << weights_ang[i] << std::endl;
   // }
-double sin00s=0.0;
-double yota;
-  for(int j=0;j<ang_absciss_points;j++){
-    // z = cos(absciss_ang[j]);
-    yota = absciss_ang[j];
-    sin00s += weights_ang[j]*sin(yota)*sin(yota);
-}
-std::cout<<"Sin00s: "<< 2*sin00s<< " double epsilon: "<< __DBL_EPSILON__<<std::endl;
+// double sin00s=0.0;
+// double yota;
+//   for(int j=0;j<ang_absciss_points;j++){
+//     // z = cos(absciss_ang[j]);
+//     yota = absciss_ang[j];
+//     sin00s += weights_ang[j]*sin(yota)*sin(yota);
+// }
+// std::cout<<"Sin00s: "<< 2*sin00s<< " double epsilon: "<< __DBL_EPSILON__<<std::endl;
 
   // for(int i=1;i<=absciss_points;i++)
   // {
