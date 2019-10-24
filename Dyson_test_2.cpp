@@ -35,7 +35,7 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
   for(int i=0;i<absciss_points;i++){
     temp_matrix[0][i] = nullptr;
     temp_matrix[1][i] = nullptr;
-    temp_matrix[0][i] = new double[absciss_points + 1];
+    temp_matrix[0][i] = new double[absciss_points + 1]; // + 1, so that in the last index, the value for p=mu is saved.
     temp_matrix[1][i] = new double[absciss_points + 1];
   }
   ProgressBar initmatrix(absciss_points,"Initializing Angular Matrix: ");
@@ -62,7 +62,6 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
               z = cos(yota);
               k_squared = p*p + q*q - 2.0*p*q*z;
               if(p==0.0){
-
               }
               else{
               s0_a += (c2_a * q*q*q*q)* (1.0/(p*p)) *
@@ -86,15 +85,26 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
   std::cout<<"Angular Matrix initialized"<< std::endl;
   return temp_matrix;
 
+  // // ##### FREE matrix pointer
+  // for (int i = 0; i<absciss_points ; i++){
+  //   free(temp_matrix[0][i]);
+  //   free(temp_matrix[1][i]);
+  // }
+  // free(temp_matrix[0]);
+  // free(temp_matrix[1]);
+  // free(temp_matrix);
+
 }
 
 double** initialize_dressing_functionAB(double a0, double b0){
   double** dress2d = nullptr;
-  dress2d = new double*[2];
+  dress2d = new double*[3];
   dress2d[0] = nullptr;
   dress2d[1] = nullptr;
+  dress2d[2] = nullptr;
   dress2d[0] = new double[absciss_points];
   dress2d[1] = new double[absciss_points];
+  dress2d[2] = new double[2]; // 2 is the number of renormalization constants used in the iteration-function
 
   ProgressBar idf(absciss_points, "Initializing Dressing Functions");
 
@@ -102,15 +112,91 @@ double** initialize_dressing_functionAB(double a0, double b0){
     dress2d[0][i] = a0;
     dress2d[1][i] = b0;
   }
+    dress2d[2][0] = 1.0;
+    dress2d[2][1] = 1.0;
+
   std::cout<<std::endl;
-  std::cout<<"Dressing Functions initialized as A = "<< a0 <<" and B = "<< b0 <<std::endl;
+  std::cout<<"Dressing Functions initialized as A = "<< a0 <<" and B = "<< b0 << " z2 as: " << dress2d[2][0]<< " zm as: "<< dress2d[2][1]<< std::endl;
   return dress2d;
+
+  // ##### FREE Vector pointer #####
+  // for (int i = 0; i<3 ; i++){
+  //   free(dress2d[i]);
+  // }
+  // free(dress2d);
+
+}
+
+double** initialize_mother_matrix(){
+
+  double q, p, z, psi, k_squared, matrix_entry, q_plus_q_minus, q_plus_squared, q_minus_squared;
+
+  double** mother_temp = nullptr;
+  mother_temp = new double**[2];
+  mother_temp[0] = nullptr;
+  mother_temp[1] = nullptr;
+  mother_temp[0] = new double*[absciss_points];
+  mother_temp[1] = new double*[absciss_points];
+
+#pragma omp parallel for default(none) shared(mother_temp)
+  for(int i=0;i<absciss_points;i++){
+    mother_temp[i] = nullptr;
+    mother_temp[i] = new double[absciss_points];
+  }
+
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+
+    q = exp(0.5*absciss_x[q_idx]);
+
+    for(int p_idx = 0; p_idx < absciss_points; p_idx++){
+
+      if(p_idx == absciss_points){
+        p = mu;
+      }
+
+      else{
+      p = exp(0.5*absciss_x[p_idx]);
+      }
+
+      matrix_entry=0.0;
+      // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
+
+      q_plus_q_minus = pow(q,2.0)*routing_minus*q*I*m_pion*z + routing_plus*q*I*m_pion*z + routing_plus*routing_minus*(-1.0)*m_pion*m_pion;
+      q_plus_squared = pow(q,2.0) + 2.0*routing_plus*q*I*m_pion*z + pow(routing_plus,2.0)*(-1.0)*m_pion*m_pion;
+      q_minus_squared = pow(q,2.0) + 2.0*routing_minus*q*I*m_pion*z + pow(routing_minus,2.0)*(-1.0)*m_pion*m_pion;
+
+      for(int psi_idx=0;psi_idx<absciss_ang;psi_idx++){
+
+          matrix_entry_2=0.0;
+
+        for(int theta_idx=0;theta_idx<absciss_ang;theta_idx++){
+
+          psi = absciss_ang[ang_idx];
+          z = cos(psi);
+
+          theta=absciss_ang[theta_idx];
+          k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha) + sin(psi)*cos(theta)*sin(alpha));
+          matrix_entry_2 += weights_ang[theta_idx]*sin(theta)*running_coupling_MarisTandy(k_squared,eta)/(k_squared));
+
+        }
+
+        matrix_entry += matrix_entry_2*weights_ang[psi_idx] * sin(psi)*sin(psi) *
+                    ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
+
+      }
+
+      
+      std::swap(temp_matrix[q_idx][p_idx], (4.0/3.0)*4*M_PI*3*2*M_PI*(1.0/2.0)*pow((1.0/(2.0*M_PI)),4.0)*pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry);
+
+    }
+  }
+
+
 }
 
 double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weights_w, double* a_vals, double* b_vals, int p_idx, double m_g){
   double s0_a = 0.0;
   double c1,c2; //Prefactor of Integral
-  c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
   double q, z, yota, k_squared, angularpta;
 
 #pragma omp parallel for private(q) default(none) shared(weights_w, absciss_x, a_vals, b_vals, p_idx, angular_matrix) reduction(+:s0_a)
@@ -119,8 +205,6 @@ double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weight
 #ifdef MarisTandy
 
       #ifdef loggrid
-
-      // c2 = g_squared/(2.0*48.0*pow(M_PI,3.0));
 
       q = exp(0.5*absciss_x[q_idx]);
 
@@ -152,6 +236,8 @@ double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weight
 
 
 #else
+
+      c1 = 2.0/(3.0*pow(m_g,2.0)*pow(M_PI,3.0));
 
       for(int j=0;j<absciss_points;j++){
         z = cos(absciss_ang[j]);
@@ -239,15 +325,13 @@ double int_coupled_b(double*** angular_matrix, double* absciss_x, double* weight
   return s0_b;
 }
 
-
-
 double** iterate_dressing_functions(double epsilon, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double g_squared, double eta, double mu){
-  // double temp_a=1e-20;
   double*** angular_matrix = initialize_matrix(epsilon,m_c,absciss_x, absciss_ang, weights_ang,g_squared,eta,mu);
 
   double** init= initialize_dressing_functionAB(1.0,m_c);
   double* a_vals= init[0];
   double* b_vals= init[1];
+  double* renorm_constants = init[2];
   double p;
 
   double new_b[absciss_points];
@@ -277,14 +361,17 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
       ++pb;
       if((abs((b_end-b_start)/(b_end+b_start))<epsilon) && (abs((a_end-a_start)/(a_end+a_start))<epsilon)) { //(abs((b_end-b_start)/(b_end+b_start))<epsilon)
         std::cout<<std::endl<<std::endl<< j << " iterations used. Maximum Iterations were set to "<< max_iter <<std::endl<<std::endl;
-        // std::cout<<std::endl<<std::endl<< b_vals[2] << " is B(p^2)"<<std::endl<<std::endl;
-        // return temp_b;
-        // break;
+
         double** dress2d = nullptr;
-        dress2d = new double*[2];
+        dress2d = new double*[3];
         std::swap(dress2d[0],a_vals);
         std::swap(dress2d[1],b_vals);
+        std::swap(dress2d[2],renorm_constants);
         return dress2d;
+        //
+        // for (int i = 0; i<3 ; i++){
+        //   free(dress2d[i]);
+        // }
 
       }
       else{
@@ -293,34 +380,26 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
         b_start = new_b[absciss_points-1];
         // ProgressBar ABupdate(absciss_points, "Calculating New A and B");
 
-// #pragma omp parallel for private(angular_matrix) default(none) shared(z2, zm, m_c, absciss_x, weights_w, a_vals, b_vals, m_g) reduction(+:new_a, new_b)
-// #pragma omp parallel for private(none) default(none) shared(zm,z2,m_c, angular_matrix, absciss_x, weights_w, a_vals, b_vals, m_g) reduction(+:new_a, new_b)
         for(int p_idx=0;p_idx<absciss_points;p_idx++){ //Integration over q
           // ++ABupdate;
 
-          new_a[p_idx] = z2*1.0;
-          new_b[p_idx] = z2*zm*m_c;
+          new_a[p_idx] = renorm_constants[0]*1.0;
+          new_b[p_idx] = renorm_constants[0]*renorm_constants[1]*m_c;
 
-          new_a[p_idx] += z2*z2*int_coupled_a(angular_matrix, absciss_x, weights_w, a_vals, b_vals, p_idx, m_g);
-          new_b[p_idx] += z2*z2*int_coupled_b(angular_matrix, absciss_x, weights_w, a_vals, b_vals, p_idx, m_g);
+          new_a[p_idx] += renorm_constants[0]*renorm_constants[0]*int_coupled_a(angular_matrix, absciss_x, weights_w, a_vals, b_vals, p_idx, m_g);
+          new_b[p_idx] += renorm_constants[0]*renorm_constants[0]*int_coupled_b(angular_matrix, absciss_x, weights_w, a_vals, b_vals, p_idx, m_g);
 
       }
 
-          // new_siga = int_coupled_a(mu, m_c, m_g, absciss_x, weights_w, absciss_ang, weights_ang, a_vals, b_vals, g_squared, eta);
           new_siga = int_coupled_a(angular_matrix, absciss_x, weights_w, a_vals, b_vals, absciss_points, m_g);
           new_sigb = int_coupled_b(angular_matrix, absciss_x, weights_w, a_vals, b_vals, absciss_points, m_g);
 
-          z2 = 1.0/(1.0 + z2*new_siga);
-          zm = 1.0/z2 - z2*new_sigb/m_c;
-          // std::cout << std::endl <<"z2 is "<< z2 << "\t"<< "zm is " << zm <<std::endl;
+          renorm_constants[0] = 1.0/(1.0 + renorm_constants[0]*new_siga);
+          renorm_constants[1] = 1.0/renorm_constants[0] - renorm_constants[0]*new_sigb/m_c;
 
 
 
-        // std::cout<<std::endl;
-        // if(j%1==0 && j !=0){
-        // std::cout<<std::endl<<"new_a[40] = "<< new_a[40] << "\t" << "new_b[40] = "<< new_b[40] << "\t" << "a_vals[40] = "<< a_vals[40] << "\t" << "b_vals[40] = "<< b_vals[40] <<std::endl;
-        // std::cout<<"a_vals[40] = " << a_vals[40] << std::endl;
-        // }
+        // ##### UPDATE A and B Values.
 
         for(int k=0; k<absciss_points; k++){
 
@@ -331,11 +410,19 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
           // b_vals[k] = new_b[k];
 
         }
-        // std::cout<<"a_vals[40] = " << a_vals[40] << std::endl;
+
+        // ##### UPDATE temporarily cross-check values.
+
       std::swap(a_end,new_a[absciss_points-1]);
       std::swap(b_end,new_b[absciss_points-1]);
 
     }
   }
+  // free(init[0]);
+  // free(init[1]);
+  // free(init[2]);
+  // free(init);
   return 0;
 }
+
+// ##### FREE STUFF ##### //
