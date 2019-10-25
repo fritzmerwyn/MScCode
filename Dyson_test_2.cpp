@@ -127,72 +127,69 @@ double** initialize_dressing_functionAB(double a0, double b0){
 
 }
 
-double** initialize_mother_matrix(){
-
-  double q, p, z, psi, k_squared, matrix_entry, q_plus_q_minus, q_plus_squared, q_minus_squared;
-
-  double** mother_temp = nullptr;
-  mother_temp = new double**[2];
-  mother_temp[0] = nullptr;
-  mother_temp[1] = nullptr;
-  mother_temp[0] = new double*[absciss_points];
-  mother_temp[1] = new double*[absciss_points];
-
-#pragma omp parallel for default(none) shared(mother_temp)
-  for(int i=0;i<absciss_points;i++){
-    mother_temp[i] = nullptr;
-    mother_temp[i] = new double[absciss_points];
-  }
-
-  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
-
-    q = exp(0.5*absciss_x[q_idx]);
-
-    for(int p_idx = 0; p_idx < absciss_points; p_idx++){
-
-      if(p_idx == absciss_points){
-        p = mu;
-      }
-
-      else{
-      p = exp(0.5*absciss_x[p_idx]);
-      }
-
-      matrix_entry=0.0;
-      // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
-
-      q_plus_q_minus = pow(q,2.0)*routing_minus*q*I*m_pion*z + routing_plus*q*I*m_pion*z + routing_plus*routing_minus*(-1.0)*m_pion*m_pion;
-      q_plus_squared = pow(q,2.0) + 2.0*routing_plus*q*I*m_pion*z + pow(routing_plus,2.0)*(-1.0)*m_pion*m_pion;
-      q_minus_squared = pow(q,2.0) + 2.0*routing_minus*q*I*m_pion*z + pow(routing_minus,2.0)*(-1.0)*m_pion*m_pion;
-
-      for(int psi_idx=0;psi_idx<absciss_ang;psi_idx++){
-
-          matrix_entry_2=0.0;
-
-        for(int theta_idx=0;theta_idx<absciss_ang;theta_idx++){
-
-          psi = absciss_ang[ang_idx];
-          z = cos(psi);
-
-          theta=absciss_ang[theta_idx];
-          k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha) + sin(psi)*cos(theta)*sin(alpha));
-          matrix_entry_2 += weights_ang[theta_idx]*sin(theta)*running_coupling_MarisTandy(k_squared,eta)/(k_squared));
-
-        }
-
-        matrix_entry += matrix_entry_2*weights_ang[psi_idx] * sin(psi)*sin(psi) *
-                    ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
-
-      }
-
-      
-      std::swap(temp_matrix[q_idx][p_idx], (4.0/3.0)*4*M_PI*3*2*M_PI*(1.0/2.0)*pow((1.0/(2.0*M_PI)),4.0)*pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry);
-
-    }
-  }
-
-
-}
+// std::complex <double>** initialize_mother_matrix(){
+//
+//   double q, p, z, psi, k_squared;
+//   std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared;
+//   std::complex<double> Imag = {0.0,1.0};
+//
+//   std::complex<double>** mother_temp = nullptr;
+//
+// #pragma omp parallel for default(none) shared(mother_temp)
+//   for(int i=0;i<absciss_points;i++){
+//     mother_temp[i] = nullptr;
+//     mother_temp[i] = new complex<double> [absciss_points];
+//   }
+//
+//   for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+//
+//     q = exp(0.5*absciss_x[q_idx]);
+//
+//     for(int p_idx = 0; p_idx < absciss_points; p_idx++){
+//
+//       if(p_idx == absciss_points){
+//         p = mu;
+//       }
+//
+//       else{
+//       p = exp(0.5*absciss_x[p_idx]);
+//       }
+//
+//       matrix_entry = {0.0,0.0};
+//       // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
+//
+//       q_plus_q_minus = pow(q,2.0)*routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z + routing_plus*routing_minus*(-1.0)*m_pion*m_pion;
+//       q_plus_squared = pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z + pow(routing_plus,2.0)*(-1.0)*m_pion*m_pion;
+//       q_minus_squared = pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z + pow(routing_minus,2.0)*(-1.0)*m_pion*m_pion;
+//
+//       for(int psi_idx=0; psi_idx<absciss_ang; psi_idx++){
+//
+//           matrix_entry_2=0.0;
+//
+//         for(int theta_idx=0; theta_idx<absciss_ang; theta_idx++){
+//
+//           psi = absciss_ang[ang_idx];
+//           z = cos(psi);
+//
+//           theta=absciss_ang[theta_idx];
+//           k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha) + sin(psi)*cos(theta)*sin(alpha));
+//           matrix_entry_2 += weights_ang[theta_idx]*sin(theta)*running_coupling_MarisTandy(k_squared,eta)/(k_squared));
+//
+//         }
+//
+//         matrix_entry += matrix_entry_2*weights_ang[psi_idx] * sin(psi)*sin(psi) *
+//                     ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
+//
+//       }
+//
+//
+//       std::swap(temp_matrix[q_idx][p_idx], (4.0/3.0)*4*M_PI*3*2*M_PI*(1.0/2.0)*pow((1.0/(2.0*M_PI)),4.0)*pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry);
+//
+//     }
+//   }
+//
+//
+// }
 
 double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weights_w, double* a_vals, double* b_vals, int p_idx, double m_g){
   double s0_a = 0.0;
@@ -423,6 +420,35 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
   // free(init[2]);
   // free(init);
   return 0;
+}
+
+std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang){
+  std::complex<double>* interpolvals = new std::complex<double>[3];
+  std::complex<double> sa, sb;
+  sa = {renorm_constants[0],0.0};
+  sb = {renorm_constants[1]*renorm_constants[1]*m_c,0.0};
+
+  std::complex<double> q, yota, z, k_squared;
+
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+      q = exp(0.5*absciss_x[q_idx]);
+
+      for(int ang_idx = 0; ang_idx < ang_absciss_points; ang_idx++){
+        yota = absciss_ang[ang_idx];
+        z = cos(yota);
+        k_squared = p*p + q*q + 2*p*q;
+
+        sa += renorm_constants[0]*renorm_constants[0]* weights_w[q_idx] *(1.0/(p*p))*( (c2 * q*q*q * a_vals[q_idx]) / ((q*q * pow(a_vals[q_idx],2.0) + pow(b_vals[q_idx],2.0))) ) *
+                weights_ang[ang_idx] * sin(yota)*sin(yota) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z)) *
+                (running_coupling_MarisTandy(k_squared,eta) / (k_squared));
+
+        sb += renorm_constants[0]*renorm_constants[0]*(weights_w[q_idx] * (c2 * q*q*q * b_vals[q_idx] / (q*q * pow(a_vals[q_idx],2) + pow(b_vals[q_idx],2)))) *
+                (weights_ang[ang_idx] * (sin(yota)*sin(yota)*(running_coupling_MarisTandy(k_squared, eta)/(k_squared)))) ;
+      }
+  }
+  interpolvals[0] = sa;
+  interpolvals[1] = sb;
+  interpolvals[2] = interpolvals[1]/interpolvals[0];
 }
 
 // ##### FREE STUFF ##### //
