@@ -9,7 +9,7 @@
 #include <string>
 #include "definitions.h"
 #include "help_numerics.h"
-#include "DysonSchwinger_renormalized.h"
+#include "Dyson_test.h"
 #include "progressbar.hpp"
 #include <complex>
 
@@ -40,11 +40,9 @@ int main(){
 
   double** vals = nullptr;
 
-  complex<double> imag = {0.0,1.0}
+  std::complex<double> imag = {0.0,1.0};
 
   std::cout<< "imaginary component is: " << imag.imag() << "\t" << "real component is: "<< imag.real()<<std::endl;
-
-  break;
 
   #ifdef MarisTandy
     std::cout<<std::endl<< "Now Using Maris Tandy Model!" << std::endl;
@@ -87,7 +85,7 @@ int main(){
   double* renorm_constants = vals[2];
   double* m_vals = nullptr;
   m_vals = new double[absciss_points];
-  std::cout<<" here ok " << std::endl;
+  // std::cout<<" here ok " << std::endl;
 
   for(int i = 0; i < absciss_points; i++){
     if(a_vals[i] == 0.0){
@@ -100,14 +98,16 @@ int main(){
   // ProgressBar pb(max_step, "Doing stuff");
 
   // ##### Print A (= vals[0][i]) and B (= vals[1][i]) values saved in "vals" #####
-  for(int i=0;i<absciss_points;i++)
-  {
-    std::cout<< i << "\t"<< vals[0][i] << "\t" << vals[1][i] << std::endl;
-  }
+  // for(int i=0;i<absciss_points;i++)
+  // {
+  //   std::cout<< i << "\t"<< vals[0][i] << "\t" << vals[1][i] << std::endl;
+  // }
 
-  std::complex<double>* renormpointabvals = interpolation_cmplx(mu, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang);
+  std::complex<double>* renormpointabvals = interpolation_cmplx(mu_renorm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
 
-  std::cout<<"A(mu) = " << renormpointabvals[0] << " B(mu) = " << renormpointabvals[1] <<std::endl;
+  std::cout<<"A(mu) = " << renormpointabvals[0] << " B(mu) = " << renormpointabvals[1] << " M(mu) = "<< renormpointabvals[2] <<std::endl;
+
+  std::cout<<"Z2 is: "<<  renorm_constants[0] << " Zm is: " << renorm_constants[1] << std::endl;
 //
 // std::cout << "# Z2 = " << renorm[0] << std::endl << "# Zm = " << renorm[1] << std::endl;
 // for (int i = 0; i < INT_STEPS; ++i) {
@@ -138,22 +138,36 @@ int main(){
   // fileout2.close();
 
   // ##### Save A and B values from "vals" to File #####
-//   ProgressBar sd(absciss_points, "Saving Data to File");
-//   std::ofstream  fileout;
-//   fileout.open("Data/DressingFunctions_A_and_B_and_M_log_600_128ang_test.dat");
-//   fileout << "# Parameters used: " << "mc(GeV): "<< m_c<<" LAMBDA(GeV) in UV-Cuttoff in log(LAMBDA*LAMBDA): "<< LAMBDA << "LAMBDA_MIN(GeV) in IR-Cuttoff in log(LAMBDA_MIN*LAMBDA_MIN): "<< LAMBDA_MIN<< " gamma_m: "<< gamma_fun(N_C, N_F) <<std::endl;
-//   fileout << "# mu(GeV): "<< mu_renorm << " Lambda_QCD(GeV): "<< Lambda_QCD << " Lambda_t(GeV): "<< Lambda_t << " Lambda_0 " <<Lambda_0<<std::endl;
-//   fileout << "# q-abscissae used: "<< absciss_points <<" ang_abscissae used: "<< ang_absciss_points <<std::endl;
-//   fileout << "# z2 is: " << renorm_constants[0] << " zm is: " << renorm_constants[1]<<std::endl;
-//   fileout << "# p^2"<< " "<< "A(p^2)"<< " "<< "B(p^2)"<< " "<< "M(p^2)" << std::endl;
-//   for(int j=0;j<absciss_points;j++){
-//     ++sd;
-//     fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j] << std::endl;
-//   }
-//   fileout.close ();
+  ProgressBar sd(absciss_points, "Saving Data to File");
+  std::ofstream  fileout;
+  fileout.open("Data/DressingFunctions_A_and_B_and_M_log_600_128ang_test3.dat");
+  fileout << "# Parameters used: " << "mc(GeV): "<< m_c<<" LAMBDA(GeV) in UV-Cuttoff in log(LAMBDA*LAMBDA): "<< LAMBDA << "LAMBDA_MIN(GeV) in IR-Cuttoff in log(LAMBDA_MIN*LAMBDA_MIN): "<< LAMBDA_MIN<< " gamma_m: "<< gamma_fun(N_C, N_F) <<std::endl;
+  fileout << "# mu(GeV): "<< mu_renorm << " Lambda_QCD(GeV): "<< Lambda_QCD << " Lambda_t(GeV): "<< Lambda_t << " Lambda_0 " <<Lambda_0<<std::endl;
+  fileout << "# q-abscissae used: "<< absciss_points <<" ang_abscissae used: "<< ang_absciss_points <<std::endl;
+  fileout << "# z2 is: " << renorm_constants[0] << " zm is: " << renorm_constants[1]<<std::endl;
+  fileout << "# p^2"<< " "<< "A(p^2)"<< " "<< "B(p^2)"<< " "<< "M(p^2)" << std::endl;
+  for(int j=0;j<absciss_points;j++){
+    ++sd;
+    fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j] << std::endl;
+  }
+  fileout.close ();
 //
+
+
+std::cout<<std::endl<< "Generating Mother Matrix" << std::endl;
+std::complex<double>** mother = initialize_mother_matrix(PionMass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle);
+
+for(int i = 0; i< absciss_points; i ++){
+  for(int j = 0; j< absciss_points; j++){
+    std::cout<< mother[i][j].real() << " " << mother[i][j].imag() << std::endl;
+  }
+}
+
   return 0;
 }
+
+
+
 
 // Read about BSE in the pdfs.
 // Implement the BSE with Maris Tandy in the code.

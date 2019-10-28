@@ -11,12 +11,14 @@
 #define Lambda_t 1.0
 #define Lambda_0 0.72
 #define mu_renorm 19.0
+#define PionMass 0.125
+#define alpha_angle 2.0
 
 // Numerical Parameters
 #define loggrid
 
-#define absciss_points 600
-#define ang_absciss_points 128
+#define absciss_points 64
+#define ang_absciss_points 32
 #define max_step 2000
 #define max_iter 200
 

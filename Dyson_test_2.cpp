@@ -2,7 +2,7 @@
 #include <math.h>
 #include <omp.h>
 #include "help_numerics.h"
-#include "DysonSchwinger.h"
+#include "Dyson_test.h"
 #include "progressbar.hpp"
 
 double gamma_fun(double color = N_C, double flavor = N_F){
@@ -13,6 +13,13 @@ double running_coupling_MarisTandy(double k_squared, double eta){
   double infrared, ultraviolet;
   infrared = M_PI * ((pow(eta,7.0))/(pow(Lambda_0,4.0))) * (k_squared * k_squared) * exp( (-(eta*eta)) * (k_squared/(Lambda_0*Lambda_0)) );
   ultraviolet = (2.0 * M_PI * gamma_fun() * (1.0 - exp(-(k_squared)/(Lambda_t*Lambda_t)) ) ) / (log( M_E*M_E - 1.0 + pow(1.0 + (k_squared/(Lambda_QCD*Lambda_QCD) ),2.0) ));
+  return  infrared + ultraviolet;
+}
+
+std::complex<double> running_coupling_MarisTandy_cmplx(std::complex<double> k_squared, double eta){
+  std::complex<double> infrared, ultraviolet;
+  infrared = M_PI * ((std::pow(eta,7.0))/(std::pow(Lambda_0,4.0))) * (k_squared * k_squared) * std::exp( (-(eta*eta)) * (k_squared/(Lambda_0*Lambda_0)) );
+  ultraviolet = (2.0 * M_PI * gamma_fun() * (1.0 - std::exp(-(k_squared)/(Lambda_t*Lambda_t)) ) ) / (std::log( M_E*M_E - 1.0 + std::pow(1.0 + (k_squared/(Lambda_QCD*Lambda_QCD) ),2.0) ));
   return  infrared + ultraviolet;
 }
 
@@ -69,7 +76,7 @@ double*** initialize_matrix(double epsilon, double m_c, double* absciss_x, doubl
                       (running_coupling_MarisTandy(k_squared, eta) / (k_squared));
 
               s0_b += (c2_b * q*q*q*q) *
-                      weights_ang[ang_idx] * (sin(yota)*sin(yota) *running_coupling_MarisTandy(k_squared,eta)/(k_squared));
+                      weights_ang[ang_idx] * (sin(yota)*sin(yota) * running_coupling_MarisTandy(k_squared,eta)/(k_squared));
               }
             }
 
@@ -127,69 +134,88 @@ double** initialize_dressing_functionAB(double a0, double b0){
 
 }
 
-// std::complex <double>** initialize_mother_matrix(){
-//
-//   double q, p, z, psi, k_squared;
-//   std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared;
-//   std::complex<double> Imag = {0.0,1.0};
-//
-//   std::complex<double>** mother_temp = nullptr;
-//
-// #pragma omp parallel for default(none) shared(mother_temp)
-//   for(int i=0;i<absciss_points;i++){
-//     mother_temp[i] = nullptr;
-//     mother_temp[i] = new complex<double> [absciss_points];
-//   }
-//
-//   for(int q_idx = 0; q_idx < absciss_points; q_idx++){
-//
-//     q = exp(0.5*absciss_x[q_idx]);
-//
-//     for(int p_idx = 0; p_idx < absciss_points; p_idx++){
-//
-//       if(p_idx == absciss_points){
-//         p = mu;
-//       }
-//
-//       else{
-//       p = exp(0.5*absciss_x[p_idx]);
-//       }
-//
-//       matrix_entry = {0.0,0.0};
-//       // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
-//
-//       q_plus_q_minus = pow(q,2.0)*routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z + routing_plus*routing_minus*(-1.0)*m_pion*m_pion;
-//       q_plus_squared = pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z + pow(routing_plus,2.0)*(-1.0)*m_pion*m_pion;
-//       q_minus_squared = pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z + pow(routing_minus,2.0)*(-1.0)*m_pion*m_pion;
-//
-//       for(int psi_idx=0; psi_idx<absciss_ang; psi_idx++){
-//
-//           matrix_entry_2=0.0;
-//
-//         for(int theta_idx=0; theta_idx<absciss_ang; theta_idx++){
-//
-//           psi = absciss_ang[ang_idx];
-//           z = cos(psi);
-//
-//           theta=absciss_ang[theta_idx];
-//           k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha) + sin(psi)*cos(theta)*sin(alpha));
-//           matrix_entry_2 += weights_ang[theta_idx]*sin(theta)*running_coupling_MarisTandy(k_squared,eta)/(k_squared));
-//
-//         }
-//
-//         matrix_entry += matrix_entry_2*weights_ang[psi_idx] * sin(psi)*sin(psi) *
-//                     ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
-//
-//       }
-//
-//
-//       std::swap(temp_matrix[q_idx][p_idx], (4.0/3.0)*4*M_PI*3*2*M_PI*(1.0/2.0)*pow((1.0/(2.0*M_PI)),4.0)*pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry);
-//
-//     }
-//   }
-//
-//
-// }
+std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta, double alpha){
+
+  double q, z, psi, theta, routing_plus, routing_minus;
+  std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
+  std::complex<double> Imag = {0.0,1.0};
+
+  std::complex<double>** mother_temp = nullptr;
+  mother_temp = new std::complex<double>*[absciss_points];
+
+  routing_plus = 0.5;
+  routing_minus = 1.0 - routing_plus;
+
+#pragma omp parallel for default(none) shared(mother_temp)
+  for(int i=0;i<absciss_points;i++){
+    mother_temp[i] = nullptr;
+    mother_temp[i] = new std::complex<double>[absciss_points];
+  }
+
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+
+    q = exp(0.5*absciss_x[q_idx]);
+
+    for(int p_idx = 0; p_idx < absciss_points; p_idx++){
+
+      p = exp(0.5*absciss_x[p_idx]);
+
+      std::complex<double> matrix_entry = {0.0,0.0};
+      // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
+
+      for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+
+          q_plus_q_minus = pow(q,2.0)*routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z + routing_plus*routing_minus*(-1.0)*m_pion*m_pion;
+          q_plus_squared = pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z + pow(routing_plus,2.0)*(-1.0)*m_pion*m_pion;
+          q_minus_squared = pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z + pow(routing_minus,2.0)*(-1.0)*m_pion*m_pion;
+
+          std::complex<double>* plus_template = interpolation_cmplx(p, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+          std::complex<double>* minus_template = interpolation_cmplx(p, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+
+          std::complex<double> a_plus = plus_template[0];
+          std::complex<double> b_plus = plus_template[1];
+          std::complex<double> a_minus = minus_template[0];
+          std::complex<double> b_minus = minus_template[1];
+
+          psi = absciss_ang[psi_idx];
+          z = cos(psi);
+          double real_matrix_entry_2=0.0;
+          double imag_matrix_entry_2=0.0;
+          double realMTtemp=0.0;
+          double imagMTtemp=0.0;
+
+#pragma omp parallel for default(none) shared(absciss_ang,p,q,z,alpha,psi,weights_ang,weights_w,a_plus,a_minus,b_minus,b_plus,q_plus_q_minus,q_plus_squared,q_minus_squared, eta) private(theta, k_squared,realMTtemp,imagMTtemp) reduction(+:real_matrix_entry_2,imag_matrix_entry_2)
+        for(int theta_idx=0; theta_idx < ang_absciss_points; theta_idx++){
+
+          theta = absciss_ang[theta_idx];
+
+          k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha) + sin(psi)*cos(theta)*sin(alpha));
+          realMTtemp= (running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).real();
+          imagMTtemp= (running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).imag();
+          real_matrix_entry_2 += (weights_ang[theta_idx]*sin(theta)*(realMTtemp));
+          imag_matrix_entry_2 += (weights_ang[theta_idx]*sin(theta)*(imagMTtemp));
+
+        }
+
+        std::complex<double> matrix_entry_2 = {real_matrix_entry_2,imag_matrix_entry_2};
+
+        matrix_entry += matrix_entry_2*weights_ang[psi_idx] * sin(psi)*sin(psi) *
+                    ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
+
+      }
+
+
+      mother_temp[q_idx][p_idx] = (4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*pow((1.0/(2.0*M_PI)),4.0)*pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry ;
+
+    }
+  }
+
+  std::cout<<"Mother Matrix initialized"<< std::endl;
+
+  return mother_temp;
+
+
+}
 
 double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weights_w, double* a_vals, double* b_vals, int p_idx, double m_g){
   double s0_a = 0.0;
@@ -323,11 +349,12 @@ double int_coupled_b(double*** angular_matrix, double* absciss_x, double* weight
 }
 
 double** iterate_dressing_functions(double epsilon, double m_c, double m_g, double* absciss_x, double* weights_w, double* absciss_ang, double* weights_ang, double g_squared, double eta, double mu){
+
   double*** angular_matrix = initialize_matrix(epsilon,m_c,absciss_x, absciss_ang, weights_ang,g_squared,eta,mu);
 
-  double** init= initialize_dressing_functionAB(1.0,m_c);
-  double* a_vals= init[0];
-  double* b_vals= init[1];
+  double** init = initialize_dressing_functionAB(1.0,m_c);
+  double* a_vals = init[0];
+  double* b_vals = init[1];
   double* renorm_constants = init[2];
   double p;
 
@@ -398,7 +425,7 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
 
         // ##### UPDATE A and B Values.
 
-        for(int k=0; k<absciss_points; k++){
+        for(int k=0; k < absciss_points; k++){
 
           std::swap(a_vals[k],new_a[k]);
           std::swap(b_vals[k],new_b[k]);
@@ -422,33 +449,66 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
   return 0;
 }
 
-std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang){
+std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta){
   std::complex<double>* interpolvals = new std::complex<double>[3];
   std::complex<double> sa, sb;
-  sa = {renorm_constants[0],0.0};
-  sb = {renorm_constants[1]*renorm_constants[1]*m_c,0.0};
 
-  std::complex<double> q, yota, z, k_squared;
+  std::complex<double> k_squared;
+  double yota,q,z;
+  double constant_a_real, constant_a_imag, constant_b_imag, constant_b_real, sa_imag, sa_real, sb_real, sb_imag;
+  sa_real = renorm_constants[0];
+  sb_real = renorm_constants[0]*renorm_constants[1]*m_c;
+  sa_imag = 0.0;
+  sb_imag = 0.0;
+
 
   for(int q_idx = 0; q_idx < absciss_points; q_idx++){
-      q = exp(0.5*absciss_x[q_idx]);
+      q = std::exp(0.5*absciss_x[q_idx]);
+
+#pragma omp parallel for default(none) shared(p,q,q_idx,absciss_ang,weights_ang,weights_w,renorm_constants,a_vals,b_vals,eta) private(yota, z, k_squared,constant_a_imag,constant_a_real,constant_b_imag,constant_b_real) reduction(+:sa_real, sa_imag,sb_real,sb_imag)
 
       for(int ang_idx = 0; ang_idx < ang_absciss_points; ang_idx++){
         yota = absciss_ang[ang_idx];
-        z = cos(yota);
-        k_squared = p*p + q*q + 2*p*q;
+        z = std::cos(yota);
+        k_squared = p*p + q*q - 2.0*p*q*z;
 
-        sa += renorm_constants[0]*renorm_constants[0]* weights_w[q_idx] *(1.0/(p*p))*( (c2 * q*q*q * a_vals[q_idx]) / ((q*q * pow(a_vals[q_idx],2.0) + pow(b_vals[q_idx],2.0))) ) *
-                weights_ang[ang_idx] * sin(yota)*sin(yota) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z)) *
-                (running_coupling_MarisTandy(k_squared,eta) / (k_squared));
+        constant_a_real = ((1.0/(p*p)) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z)) *
+                        (running_coupling_MarisTandy_cmplx(k_squared,eta) / (k_squared))).real();
 
-        sb += renorm_constants[0]*renorm_constants[0]*(weights_w[q_idx] * (c2 * q*q*q * b_vals[q_idx] / (q*q * pow(a_vals[q_idx],2) + pow(b_vals[q_idx],2)))) *
-                (weights_ang[ang_idx] * (sin(yota)*sin(yota)*(running_coupling_MarisTandy(k_squared, eta)/(k_squared)))) ;
+        constant_a_imag = ((1.0/(p*p)) * (p*q*z + (2.0/(k_squared)) * (p*p*p*q*z - p*p*q*q - p*p*q*q*z*z + p*q*q*q*z)) *
+                        (running_coupling_MarisTandy_cmplx(k_squared,eta) / (k_squared))).imag();
+
+        constant_b_real = (running_coupling_MarisTandy_cmplx(k_squared, eta)/(k_squared)).real();
+
+        constant_b_imag = (running_coupling_MarisTandy_cmplx(k_squared, eta)/(k_squared)).imag();
+
+
+        sa_real += renorm_constants[0]*renorm_constants[0]* weights_w[q_idx]*((4.0/(2.0*3.0*std::pow(M_PI,2.0)) * q*q*q*q * a_vals[q_idx]) /
+              ((q*q * std::pow(a_vals[q_idx],2.0) + std::pow(b_vals[q_idx],2.0)))) * constant_a_real *
+              weights_ang[ang_idx] * std::sin(yota)*std::sin(yota) ;
+
+        sb_real += renorm_constants[0]*renorm_constants[0]*(weights_w[q_idx] * (4.0/(2.0*std::pow(M_PI,2.0)) * q*q*q*q * b_vals[q_idx] /
+              (q*q * std::pow(a_vals[q_idx],2.0) + std::pow(b_vals[q_idx],2.0)))) *
+              (weights_ang[ang_idx] * (std::sin(yota)*std::sin(yota)*constant_b_real)) ;
+
+        sa_imag += renorm_constants[0]*renorm_constants[0]* weights_w[q_idx]*((4.0/(2.0*3.0*std::pow(M_PI,2.0)) * q*q*q*q * a_vals[q_idx]) /
+              ((q*q * std::pow(a_vals[q_idx],2.0) + std::pow(b_vals[q_idx],2.0)))) * constant_a_imag *
+              weights_ang[ang_idx] * std::sin(yota)*std::sin(yota) ;
+
+        sb_imag += renorm_constants[0]*renorm_constants[0]*(weights_w[q_idx] * (4.0/(2.0*std::pow(M_PI,2.0)) * q*q*q*q * b_vals[q_idx] /
+              (q*q * std::pow(a_vals[q_idx],2.0) + std::pow(b_vals[q_idx],2.0)))) *
+              (weights_ang[ang_idx] * (std::sin(yota)*std::sin(yota)*constant_b_imag)) ;
+
       }
   }
+  sa = {sa_real,sa_imag};
+  sb = {sb_real,sb_imag};
+
   interpolvals[0] = sa;
   interpolvals[1] = sb;
   interpolvals[2] = interpolvals[1]/interpolvals[0];
+
+  return interpolvals;
 }
 
 // ##### FREE STUFF ##### //
