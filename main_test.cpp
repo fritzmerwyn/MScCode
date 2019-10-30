@@ -139,6 +139,7 @@ int main(){
 
   // ##### Save A and B values from "vals" to File #####
   ProgressBar sd(absciss_points, "Saving Data to File");
+  //Total geiles neues feature
   std::ofstream  fileout;
   fileout.open("Data/DressingFunctions_A_and_B_and_M_log_600_128ang_test3.dat");
   fileout << "# Parameters used: " << "mc(GeV): "<< m_c<<" LAMBDA(GeV) in UV-Cuttoff in log(LAMBDA*LAMBDA): "<< LAMBDA << "LAMBDA_MIN(GeV) in IR-Cuttoff in log(LAMBDA_MIN*LAMBDA_MIN): "<< LAMBDA_MIN<< " gamma_m: "<< gamma_fun(N_C, N_F) <<std::endl;
@@ -150,7 +151,9 @@ int main(){
     ++sd;
     fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j] << std::endl;
   }
+  // Bissi geiles feature
   fileout.close ();
+  //Bullshit
 //
 
 

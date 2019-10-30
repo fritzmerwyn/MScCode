@@ -144,7 +144,7 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
   mother_temp = new std::complex<double>*[absciss_points];
 
   routing_plus = 0.5;
-  routing_minus = 1.0 - routing_plus;
+  routing_minus = routing_plus - 1.0;
 
 #pragma omp parallel for default(none) shared(mother_temp)
   for(int i=0;i<absciss_points;i++){
@@ -165,20 +165,27 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
 
       for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
 
-          q_plus_q_minus = pow(q,2.0)*routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z + routing_plus*routing_minus*(-1.0)*m_pion*m_pion;
-          q_plus_squared = pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z + pow(routing_plus,2.0)*(-1.0)*m_pion*m_pion;
-          q_minus_squared = pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z + pow(routing_minus,2.0)*(-1.0)*m_pion*m_pion;
+          psi = absciss_ang[psi_idx];
+          z = std::cos(psi);
 
-          std::complex<double>* plus_template = interpolation_cmplx(p, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
-          std::complex<double>* minus_template = interpolation_cmplx(p, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+          q_plus_q_minus = std::pow(q,2.0)*routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
+          q_plus_squared = std::pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z - std::pow(routing_plus,2.0)*m_pion*m_pion;
+          q_minus_squared = std::pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z - std::pow(routing_minus,2.0)*m_pion*m_pion;
+
+          std::complex<double> abs_qp = std::sqrt(q_plus_squared);
+          std::complex<double> abs_qm = std::sqrt(q_minus_squared);
+
+          // std::cout<< "sqrt(qp**2) = " << abs_qp << " sqrt(qm**2) = " << abs_qm <<std::endl;
+
+          std::complex<double>* plus_template = interpolation_cmplx(abs_qp, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+          std::complex<double>* minus_template = interpolation_cmplx(abs_qm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
 
           std::complex<double> a_plus = plus_template[0];
           std::complex<double> b_plus = plus_template[1];
           std::complex<double> a_minus = minus_template[0];
           std::complex<double> b_minus = minus_template[1];
 
-          psi = absciss_ang[psi_idx];
-          z = cos(psi);
+
           double real_matrix_entry_2=0.0;
           double imag_matrix_entry_2=0.0;
           double realMTtemp=0.0;
@@ -189,23 +196,23 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
 
           theta = absciss_ang[theta_idx];
 
-          k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha) + sin(psi)*cos(theta)*sin(alpha));
+          k_squared = p*p + q*q - 2.0*p*q*(z*std::cos(alpha) + std::sin(psi)*std::cos(theta)*std::sin(alpha));
           realMTtemp= (running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).real();
           imagMTtemp= (running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).imag();
-          real_matrix_entry_2 += (weights_ang[theta_idx]*sin(theta)*(realMTtemp));
-          imag_matrix_entry_2 += (weights_ang[theta_idx]*sin(theta)*(imagMTtemp));
+          real_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(realMTtemp));
+          imag_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(imagMTtemp));
 
         }
 
         std::complex<double> matrix_entry_2 = {real_matrix_entry_2,imag_matrix_entry_2};
 
-        matrix_entry += matrix_entry_2*weights_ang[psi_idx] * sin(psi)*sin(psi) *
+        matrix_entry += matrix_entry_2*weights_ang[psi_idx] * std::sin(psi)*std::sin(psi) *
                     ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
 
       }
 
 
-      mother_temp[q_idx][p_idx] = (4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*pow((1.0/(2.0*M_PI)),4.0)*pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry ;
+      mother_temp[q_idx][p_idx] = (4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry ;
 
     }
   }
