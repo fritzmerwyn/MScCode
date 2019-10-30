@@ -140,11 +140,11 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
   std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
   std::complex<double> Imag = {0.0,1.0};
 
-  std::complex<double>** mother_temp = nullptr;
-  mother_temp = new std::complex<double>*[absciss_points];
-
   routing_plus = 0.5;
   routing_minus = routing_plus - 1.0;
+
+  std::complex<double>** mother_temp = nullptr;
+  mother_temp = new std::complex<double>*[absciss_points];
 
 #pragma omp parallel for default(none) shared(mother_temp)
   for(int i=0;i<absciss_points;i++){
@@ -168,7 +168,7 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
           psi = absciss_ang[psi_idx];
           z = std::cos(psi);
 
-          q_plus_q_minus = std::pow(q,2.0)*routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
+          q_plus_q_minus = std::pow(q,2.0) + routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
           q_plus_squared = std::pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z - std::pow(routing_plus,2.0)*m_pion*m_pion;
           q_minus_squared = std::pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z - std::pow(routing_minus,2.0)*m_pion*m_pion;
 

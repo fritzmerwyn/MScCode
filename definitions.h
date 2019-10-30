@@ -11,7 +11,7 @@
 #define Lambda_t 1.0
 #define Lambda_0 0.72
 #define mu_renorm 19.0
-#define PionMass 0.125
+#define PionMass 0.120
 #define alpha_angle 2.0
 
 // Numerical Parameters

@@ -12,6 +12,9 @@
 #include "Dyson_test.h"
 #include "progressbar.hpp"
 #include <complex>
+#include <stdio.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_eigen.h>
 
 
 
@@ -108,6 +111,8 @@ int main(){
   std::cout<<"A(mu) = " << renormpointabvals[0] << " B(mu) = " << renormpointabvals[1] << " M(mu) = "<< renormpointabvals[2] <<std::endl;
 
   std::cout<<"Z2 is: "<<  renorm_constants[0] << " Zm is: " << renorm_constants[1] << std::endl;
+
+  std::cout<<"PionMass-Input is: "<<  PionMass << " Alpha-Angle is : " << alpha_angle << std::endl;
 //
 // std::cout << "# Z2 = " << renorm[0] << std::endl << "# Zm = " << renorm[1] << std::endl;
 // for (int i = 0; i < INT_STEPS; ++i) {
@@ -151,20 +156,12 @@ int main(){
     ++sd;
     fileout<< exp(absciss_x[j]) << " " << vals[0][j] << " " << vals[1][j] << " " << m_vals[j] << std::endl;
   }
-  // Bissi geiles feature
   fileout.close ();
-  //Bullshit
-//
 
+  double pionmass_test = regulaFalsi(0.120,0.125,1e-2,m_c, renorm_constants, a_vals, b_vals, absciss_x,
+    absciss_ang, weights_w, weights_ang, eta);
 
-std::cout<<std::endl<< "Generating Mother Matrix" << std::endl;
-std::complex<double>** mother = initialize_mother_matrix(PionMass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle);
-
-for(int i = 0; i< absciss_points; i ++){
-  for(int j = 0; j< absciss_points; j++){
-    std::cout<< mother[i][j].real() << " " << mother[i][j].imag() << std::endl;
-  }
-}
+  std::cout<< "Pion mass again is: " << pionmass_test << std::endl<<std::endl;
 
   return 0;
 }

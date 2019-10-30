@@ -19,3 +19,9 @@ double** iterate_dressing_functions(double epsilon, double m_c, double m_g, doub
 double gamma_fun(double NC, double NF);
 
 std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta);
+
+double regulaFalsi(double low_mass, double high_mass, double epsilon, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
+  double* absciss_ang, double* weights_w, double* weights_ang, double eta);
+
+double* bse_root(double pionmass, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
+  double* absciss_ang, double* weights_w, double* weights_ang, double eta);
