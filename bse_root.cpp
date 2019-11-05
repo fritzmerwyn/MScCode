@@ -249,10 +249,11 @@ std::complex<double>** mother = initialize_mother_matrix(pionmass, m_c, renorm_c
 gsl_vector_complex *eval = gsl_vector_complex_alloc (absciss_points);
 gsl_matrix_complex *evec = gsl_matrix_complex_alloc (absciss_points, absciss_points);
 
-gsl_eigen_nonsymm_workspace * mother_workspace =
-  gsl_eigen_nonsymm_alloc (absciss_points);
+gsl_eigen_nonsymmv_workspace * mother_workspace =
+  gsl_eigen_nonsymmv_alloc (absciss_points);
 
 gsl_matrix* gsl_mother_temp = gsl_matrix_alloc(absciss_points,absciss_points);
+
 
 for(int i=0; i<absciss_points; i++){
   for(int j=0; j<absciss_points; j++){
@@ -260,19 +261,35 @@ for(int i=0; i<absciss_points; i++){
   }
 }
 
-gsl_eigen_nonsymm_params(0, 1, mother_workspace);
-gsl_eigen_nonsymm (gsl_mother_temp, eval, mother_workspace);
+// gsl_eigen_nonsymmv_params(0, 1, mother_workspace);
+gsl_eigen_nonsymmv (gsl_mother_temp, eval, evec, mother_workspace);
 
-gsl_eigen_nonsymm_free (mother_workspace);
+gsl_eigen_nonsymmv_free (mother_workspace);
 
-gsl_eigen_nonsymmv_sort (eval,nullptr,
+gsl_eigen_nonsymmv_sort (eval,evec,
                          GSL_EIGEN_SORT_ABS_DESC);
 
 std::cout<< "first eigenvalue of mother-matrix is: "<< GSL_REAL(gsl_vector_complex_get(eval,0))<<std::endl;
 
 double root = GSL_REAL(gsl_vector_complex_get(eval,0));
 
+gsl_vector_complex_view evec_0
+           = gsl_matrix_complex_column (evec, 0);
+
+for (int j = 0; j < absciss_points; ++j)
+          {
+            gsl_complex z =
+              gsl_vector_complex_get(&evec_0.vector, j);
+            std::cout<<GSL_REAL(z)<<" + i* "<< GSL_IMAG(z)<<std::endl;
+          }
+
 return root - 1.0;
+
+// std::ofstream fileout3;
+// fileout3.open("Data/VectorMatrixPion_temp_1st.dat");
+
+// fileout3.close();
+
 gsl_vector_complex_free(eval);
 gsl_matrix_complex_free(evec);
 gsl_matrix_free(gsl_mother_temp);
