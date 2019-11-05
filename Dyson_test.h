@@ -23,5 +23,10 @@ std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, do
 double regulaFalsi(double low_mass, double high_mass, double epsilon, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
   double* absciss_ang, double* weights_w, double* weights_ang, double eta);
 
-double* bse_root(double pionmass, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
+double regulaFalsitest(double low_mass, double high_mass, double epsilon);
+
+double bse_root(double pionmass, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
   double* absciss_ang, double* weights_w, double* weights_ang, double eta);
+
+double findRoot(double low_mass, double high_mass, double m_c, double eta, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
+  double* absciss_ang, double* weights_w, double* weights_ang);

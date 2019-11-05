@@ -158,10 +158,23 @@ int main(){
   }
   fileout.close ();
 
-  double pionmass_test = regulaFalsi(0.120,0.125,1e-2,m_c, renorm_constants, a_vals, b_vals, absciss_x,
-    absciss_ang, weights_w, weights_ang, eta);
 
-  std::cout<< "Pion mass again is: " << pionmass_test << std::endl<<std::endl;
+  double eigenvaluebse=0.0;
+  double pimass = 0.1200;
+
+  // for(int i=1; i<10; i++){
+  //   pimass = pimass + 0.0002*i;
+  //   eigenvaluebse = bse_root(pimass, m_c, renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
+  //   std::cout<< "Pionmass Input = "<< pimass << "eigenvalue = " << eigenvaluebse <<std::endl;
+  // }
+
+  // regulaFalsi(0.1208,0.121,1e8,m_c, renorm_constants, a_vals, b_vals, absciss_x,
+  //   absciss_ang, weights_w, weights_ang, eta);
+  double status;
+  status = regulaFalsi(0.110,0.130,1e-8,m_c, renorm_constants, a_vals, b_vals, absciss_x,
+    absciss_ang, weights_w, weights_ang, eta);
+ // status = regulaFalsitest(5.0,6.0,0.0000001);
+  std::cout<< std::endl<<"Pion mass again is: " << status << std::endl<<std::endl;
 
   return 0;
 }
