@@ -135,14 +135,82 @@ double** initialize_dressing_functionAB(double a0, double b0){
 
 }
 
-std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta, double alpha){
+std::complex <double>*** initialize_theta_matrix(double* renorm_constants,double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta, double alpha){
+
+  std::complex<double>*** temp_mother_matrix = nullptr;
+  temp_mother_matrix = new std::complex<double>**[ang_absciss_points];
+
+  for(int i=0;i<ang_absciss_points;i++){
+    temp_mother_matrix[i] = nullptr;
+    temp_mother_matrix[i] = new std::complex<double>*[absciss_points];
+  }
+
+  for(int i=0;i<ang_absciss_points;i++){
+    for(int j = 0; j<absciss_points; j++){
+    temp_mother_matrix[i][j] = nullptr;
+    temp_mother_matrix[i][j] = new std::complex<double>[absciss_points];
+    }
+  }
+
+  double q, z, psi, theta;
+  std::complex<double> matrix_entry, p, k_squared;
+  std::complex<double> Imag = {0.0,1.0};
+
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+
+    q = exp(0.5*absciss_x[q_idx]);
+
+    for(int p_idx = 0; p_idx < absciss_points; p_idx++){
+
+      p = exp(0.5*absciss_x[p_idx]);
+
+      std::complex<double> matrix_entry = {0.0,0.0};
+      // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
+
+      for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+
+          psi = absciss_ang[psi_idx];
+          z = std::cos(psi);
+
+          double real_matrix_entry_2=0.0;
+          double imag_matrix_entry_2=0.0;
+          double realMTtemp=0.0;
+          double imagMTtemp=0.0;
+
+#pragma omp parallel for default(none) shared(absciss_ang,p,q,q_idx,z,alpha,psi,psi_idx,renorm_constants,weights_ang,weights_w,eta) private(theta, k_squared,realMTtemp,imagMTtemp) reduction(+:real_matrix_entry_2,imag_matrix_entry_2)
+        for(int theta_idx=0; theta_idx < ang_absciss_points; theta_idx++){
+
+          theta = absciss_ang[theta_idx];
+
+          k_squared = p*p + q*q - 2.0*p*q*(z*std::cos(alpha) + std::sin(psi)*std::cos(theta)*std::sin(alpha));
+          realMTtemp= ((running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).real()) *((4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*weights_ang[psi_idx] * std::sin(psi)*std::sin(psi));
+          imagMTtemp= ((running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).imag()) *((4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*weights_ang[psi_idx] * std::sin(psi)*std::sin(psi));
+          real_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(realMTtemp));
+          imag_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(imagMTtemp));
+
+        }
+
+        std::complex<double> matrix_entry_2 = {real_matrix_entry_2,imag_matrix_entry_2};
+
+        temp_mother_matrix[psi_idx][p_idx][q_idx] = matrix_entry_2;
+
+      }
+    }
+  }
+
+  std::cout<<"Theta-Matrix initialized"<< std::endl;
+
+  return temp_mother_matrix;
+}
+
+std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta, double alpha, std::complex<double>*** theta_matrix){
 
   double q, z, psi, theta, routing_plus, routing_minus;
   std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
   std::complex<double> Imag = {0.0,1.0};
 
   routing_plus = 0.5;
-  routing_minus = routing_plus -1.0;
+  routing_minus = routing_plus - 1.0;
 
   std::complex<double>** mother_temp = nullptr;
   mother_temp = new std::complex<double>*[absciss_points];
@@ -188,59 +256,35 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
           std::complex<double> a_minus = minus_template[0];
           std::complex<double> b_minus = minus_template[1];
 
-          // fileouta<<abs_qp<<" "<< a_plus <<" "<<b_plus<<" "<<abs_qm<<" "<< a_minus <<" "<<b_minus<<std::endl;
 
-
-
-
-          double real_matrix_entry_2=0.0;
-          double imag_matrix_entry_2=0.0;
-          double realMTtemp=0.0;
-          double imagMTtemp=0.0;
-
-#pragma omp parallel for default(none) shared(absciss_ang,p,q,z,alpha,psi,weights_ang,weights_w,a_plus,a_minus,b_minus,b_plus,q_plus_q_minus,q_plus_squared,q_minus_squared, eta) private(theta, k_squared,realMTtemp,imagMTtemp) reduction(+:real_matrix_entry_2,imag_matrix_entry_2)
-        for(int theta_idx=0; theta_idx < ang_absciss_points; theta_idx++){
-
-          theta = absciss_ang[theta_idx];
-
-          k_squared = p*p + q*q - 2.0*p*q*(z*std::cos(alpha) + std::sin(psi)*std::cos(theta)*std::sin(alpha));
-          realMTtemp= (running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).real();
-          imagMTtemp= (running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).imag();
-          real_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(realMTtemp));
-          imag_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(imagMTtemp));
-
-        }
-
-        std::complex<double> matrix_entry_2 = {real_matrix_entry_2,imag_matrix_entry_2};
-
-        matrix_entry += matrix_entry_2*weights_ang[psi_idx] * std::sin(psi)*std::sin(psi) *
+        matrix_entry += theta_matrix[psi_idx][p_idx][q_idx]*
                     ((q_plus_q_minus*a_plus*a_minus + b_plus*b_minus)/((q_plus_squared*a_plus*a_plus + b_plus*b_plus)*(q_minus_squared*a_minus*a_minus + b_minus*b_minus)));
 
       }
 
 
-      mother_temp[p_idx][q_idx] = (4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*matrix_entry ;
+      mother_temp[p_idx][q_idx] = matrix_entry ;
 
     }
   }
   // fileouta.close();
 
-  std::ofstream fileout3;
-  fileout3.open("Data/MotherMatrixPion_temp_1st.dat");
-  for(int i = 0; i<absciss_points; i++){
-    for(int j = 0; j<absciss_points; j++){
-      fileout3<<mother_temp[i][j];
-    }
-    fileout3<<std::endl;
-  }
-  fileout3.close();
+  // std::ofstream fileout3;
+  // fileout3.open("Data/MotherMatrixPion_temp_1st.dat");
+  // for(int i = 0; i<absciss_points; i++){
+  //   for(int j = 0; j<absciss_points; j++){
+  //     fileout3<<mother_temp[i][j];
+  //   }
+  //   fileout3<<std::endl;
+  // }
+  // fileout3.close();
 
   std::cout<<"Mother Matrix initialized"<< std::endl;
 
   return mother_temp;
 
-
 }
+
 
 double int_coupled_a(double*** angular_matrix, double* absciss_x, double* weights_w, double* a_vals, double* b_vals, int p_idx, double m_g){
   double s0_a = 0.0;

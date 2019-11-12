@@ -23,7 +23,10 @@ int main(){
   std::cout.precision(17); // ##### set precision to 17 values after comma ######
 
   // ##### Constants ###### //
-
+ // std::ofstream gmorpionmass;
+ // gmorpionmass.open("Data/gmorpionmass.dat");
+ // gmorpionmass<<"#Stromquarkmass and Pionmass"<<std::endl;
+ // for(int i=0; i<10;i++){
   double m_g=0.132;
   double epsilon=1e-10;
   double m_c = 0.0037;
@@ -160,21 +163,84 @@ int main(){
 
 
   double eigenvaluebse=0.0;
-  double pimass = 0.1200;
+  double pimass = 1.0;
+
+
+  // std::complex<double>** mother3 = initialize_mother_matrix(pimass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle);
 
   // for(int i=1; i<10; i++){
   //   pimass = pimass + 0.0002*i;
   //   eigenvaluebse = bse_root(pimass, m_c, renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
   //   std::cout<< "Pionmass Input = "<< pimass << "eigenvalue = " << eigenvaluebse <<std::endl;
   // }
+  double status = 0.0;
+  double status2 = 0.0;
+  // status = bse_root_eigenlib(0.12094, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
 
-  // regulaFalsi(0.1208,0.121,1e8,m_c, renorm_constants, a_vals, b_vals, absciss_x,
-  //   absciss_ang, weights_w, weights_ang, eta);
-  double status;
-  status = regulaFalsi(0.110,0.130,1e-8,m_c, renorm_constants, a_vals, b_vals, absciss_x,
-    absciss_ang, weights_w, weights_ang, eta);
- // status = regulaFalsitest(5.0,6.0,0.0000001);
-  std::cout<< std::endl<<"Pion mass again is: " << status << std::endl<<std::endl;
+  std::complex<double>*** theta_matrix = initialize_theta_matrix(renorm_constants, absciss_x, absciss_ang,weights_w,  weights_ang, eta, alpha_angle);
+  status = regulaFalsi(0.110,0.140,1e-8,m_c, renorm_constants, a_vals, b_vals, absciss_x,absciss_ang, weights_w, weights_ang, eta, theta_matrix);
+
+  // bse_root_eigenlib(0.11982047108638232, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
+  bse_root_eigenlib(status, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta, theta_matrix);
+//   std::ofstream gmorpionmass;
+//   gmorpionmass.open("Data/gmorpionmass.dat");
+//   gmorpionmass<<"#Stromquarkmass and Pionmass"<<std::endl;
+//   for(int i=0; i<10;i++){
+//     double stromquark=0.0001+i*0.001;
+//   double status=0.0;
+//   status = regulaFalsi(0.001,0.5,1e-5,stromquark, renorm_constants, a_vals, b_vals, absciss_x,
+//     absciss_ang, weights_w, weights_ang, eta);
+//  // status = regulaFalsitest(5.0,6.0,0.0000001);
+//   std::cout<< std::endl<<"Pion mass again is: " << status << std::endl<<std::endl;
+  // gmorpionmass<<m_c<<" "<<status<<std::endl;
+// }
+// gmorpionmass.close();
+ // double q, z, psi, theta, routing_plus, routing_minus;
+ // std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
+ // std::complex<double> Imag = {0.0,1.0};
+ //
+ // routing_plus = 0.5;
+ // routing_minus = routing_plus - 1.0;
+
+ // std::complex<double>** mother_temp = nullptr;
+ // mother_temp = new std::complex<double>*[absciss_points];
+ // std::ofstream  fileouta;
+ // fileouta.open("Data/DressingFunctions_A_and_B_PLUS_complex.dat");
+ // fileouta<<"qp"<<"\t"<<"A+"<<"\t"<<"B+"<<"qm"<<"\t"<<"A-"<<"\t"<<"B-"<<std::endl;
+ // for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+ //
+ //   q = exp(0.5*absciss_x[q_idx]);
+ //
+ //     for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+ //
+ //         psi = absciss_ang[psi_idx];
+ //         z = std::cos(psi);
+ //
+ //         q_plus_q_minus = std::pow(q,2.0) + routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
+ //         q_plus_squared = std::pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z - std::pow(routing_plus,2.0)*m_pion*m_pion;
+ //         q_minus_squared = std::pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z - std::pow(routing_minus,2.0)*m_pion*m_pion;
+ //
+ //         std::complex<double> abs_qp = std::sqrt(q_plus_squared);
+ //         std::complex<double> abs_qm = std::sqrt(q_minus_squared);
+ //
+ //         // std::cout<< "sqrt(qp**2) = " << abs_qp << " sqrt(qm**2) = " << abs_qm <<std::endl;
+ //
+ //         std::complex<double>* plus_template = interpolation_cmplx(abs_qp, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+ //         std::complex<double>* minus_template = interpolation_cmplx(abs_qm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+ //
+ //         std::complex<double> a_plus = plus_template[0];
+ //         std::complex<double> b_plus = plus_template[1];
+ //         std::complex<double> a_minus = minus_template[0];
+ //         std::complex<double> b_minus = minus_template[1];
+ //
+ //         fileouta<<q_plus_squared<<" "<< a_plus <<" "<<b_plus<<" "<<q_minus_squared<<" "<< a_minus <<" "<<b_minus<<std::endl;
+ //       }
+ //     }
+ //     fileouta.close();
+
+
+     // std::complex<double>* abtest = interpolation_cmplx(0.121, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+     // std::cout<< "interpolation test at x=2.133 = "<< abtest[0] <<std::endl;
 
   return 0;
 }

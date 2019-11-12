@@ -12,7 +12,7 @@
 #define Lambda_0 0.72
 #define mu_renorm 19.0
 #define PionMass 0.120
-#define alpha_angle 2.0
+#define alpha_angle 1.7
 
 // Numerical Parameters
 #define loggrid

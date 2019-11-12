@@ -12,13 +12,14 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_roots.h>
+#include <Eigen/Eigenvalues>
 
 
 double regulaFalsi(double low_mass, double high_mass, double epsilon, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
-  double* absciss_ang, double* weights_w, double* weights_ang, double eta)
+  double* absciss_ang, double* weights_w, double* weights_ang, double eta, std::complex<double>*** theta_matrix)
 {
-      double f_low = bse_root(low_mass, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
-      double f_high = bse_root(high_mass, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
+      double f_low = bse_root(low_mass, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta, theta_matrix);
+      double f_high = bse_root(high_mass, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta, theta_matrix);
 
       double x_low, x_high, delta_x, delta_mass, c, possibleroot;
 
@@ -43,7 +44,7 @@ double regulaFalsi(double low_mass, double high_mass, double epsilon, double m_c
     {
         // Find the point that touches x axis
         c = ((x_low*f_high - x_high*f_low )/ (f_high - f_low));
-        possibleroot = bse_root(c, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
+        possibleroot = bse_root(c, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta, theta_matrix);
 
         // Check if the above found point is root
         if(possibleroot*f_high < 0.0){
@@ -203,11 +204,52 @@ struct quadratic_params
 //   return status;
 // }
 
+double bse_root_eigenlib(double pionmass, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
+  double* absciss_ang, double* weights_w, double* weights_ang, double eta, std::complex<double>*** theta_matrix){
+
+    std::cout<<std::endl<< "Generating Mother Matrix" << std::endl;
+    std::complex<double>** mother = initialize_mother_matrix(pionmass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle, theta_matrix);
+
+    Eigen::MatrixXcd Ematrix(absciss_points,absciss_points);
+
+    for(int i=0; i<absciss_points; i++){
+      for(int j=0; j<absciss_points; j++){
+        Ematrix(i,j) = mother[i][j];
+      }
+    }
+
+    Eigen::ComplexEigenSolver<Eigen::MatrixXcd> ces;
+    ces.compute(Ematrix);
+
+    std::cout << "The eigenvalues of A are:" << std::endl << ces.eigenvalues()[absciss_points-1] << std::endl;
+    std::cout << "The matrix of eigenvectors, V, is:" << std::endl << ces.eigenvectors().col(absciss_points -1).real() << std::endl << std::endl;
+
+    double root = ces.eigenvalues()[absciss_points - 1].real();
+    std::cout<<root<<std::endl;
+
+    std::ofstream  pionmassfile;
+    pionmassfile.open("Data/PionmassandE(pP).dat");
+    pionmassfile << "# Parameters used: " << "mc(GeV): "<< m_c<<" LAMBDA(GeV) in UV-Cuttoff in log(LAMBDA*LAMBDA): "<< LAMBDA << "LAMBDA_MIN(GeV) in IR-Cuttoff in log(LAMBDA_MIN*LAMBDA_MIN): "<< LAMBDA_MIN<< " gamma_m: "<< gamma_fun(N_C, N_F) <<std::endl;
+    pionmassfile << "# mu(GeV): "<< mu_renorm << " Lambda_QCD(GeV): "<< Lambda_QCD << " Lambda_t(GeV): "<< Lambda_t << " Lambda_0 " <<Lambda_0<<std::endl;
+    pionmassfile << "# q-abscissae used: "<< absciss_points <<" ang_abscissae used: "<< ang_absciss_points <<std::endl;
+    pionmassfile << "# z2 is: " << renorm_constants[0] << " zm is: " << renorm_constants[1]<<std::endl;
+    pionmassfile << "Pionmass is : " << pionmass<<std::endl;
+    pionmassfile << "# p^2"<< " "<< "E(p,P)"<<std::endl;
+    for(int j=0;j<absciss_points;j++){
+      // ++sd;
+      pionmassfile<< exp(absciss_x[j]) << " " << ces.eigenvectors().col(absciss_points-1).real()[j]<< std::endl;
+    }
+    pionmassfile.close ();
+
+    return root;
+
+  }
+
 double bse_root(double pionmass, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x,
-  double* absciss_ang, double* weights_w, double* weights_ang, double eta){
+  double* absciss_ang, double* weights_w, double* weights_ang, double eta, std::complex<double>*** theta_matrix){
 
 std::cout<<std::endl<< "Generating Mother Matrix" << std::endl;
-std::complex<double>** mother = initialize_mother_matrix(pionmass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle);
+std::complex<double>** mother = initialize_mother_matrix(pionmass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle, theta_matrix);
 
 // double* gsl_mother_temp = nullptr;
 // gsl_mother_temp = new double[absciss_points*absciss_points];
@@ -246,36 +288,59 @@ std::complex<double>** mother = initialize_mother_matrix(pionmass, m_c, renorm_c
 // gsl_matrix_view gsl_mother
 //   = gsl_matrix_view_array (gsl_mother_temp, absciss_points, absciss_points);
 
-gsl_vector_complex *eval = gsl_vector_complex_alloc (absciss_points);
+gsl_vector_complex *alpha = gsl_vector_complex_alloc (absciss_points);
+gsl_vector* beta = gsl_vector_alloc(absciss_points);
 gsl_matrix_complex *evec = gsl_matrix_complex_alloc (absciss_points, absciss_points);
 
-gsl_eigen_nonsymmv_workspace * mother_workspace =
-  gsl_eigen_nonsymmv_alloc (absciss_points);
+gsl_eigen_genv_workspace * mother_workspace =
+  gsl_eigen_genv_alloc (absciss_points);
 
 gsl_matrix* gsl_mother_temp = gsl_matrix_alloc(absciss_points,absciss_points);
+gsl_matrix* one = gsl_matrix_alloc(absciss_points,absciss_points);
 
 
 for(int i=0; i<absciss_points; i++){
   for(int j=0; j<absciss_points; j++){
     gsl_matrix_set(gsl_mother_temp,i,j,mother[i][j].real());
+    gsl_matrix_set(one,i,j,0.0);
+    if(i==j){
+      gsl_matrix_set(one,i,j,1.0);
+    }
   }
 }
 
 // gsl_eigen_nonsymmv_params(0, 1, mother_workspace);
-gsl_eigen_nonsymmv (gsl_mother_temp, eval, evec, mother_workspace);
+gsl_eigen_genv (gsl_mother_temp,one, alpha,beta,evec, mother_workspace);
 
-gsl_eigen_nonsymmv_free (mother_workspace);
+gsl_eigen_genv_free (mother_workspace);
 
-gsl_eigen_nonsymmv_sort (eval,evec,
+gsl_eigen_genv_sort (alpha,beta,evec,
                          GSL_EIGEN_SORT_ABS_DESC);
 
-std::cout<< "first eigenvalue of mother-matrix is: "<< GSL_REAL(gsl_vector_complex_get(eval,0))<<std::endl;
+double alpha0 = GSL_REAL(gsl_vector_complex_get(alpha,0));
+double beta0 = gsl_vector_get(beta,0);
+double root = alpha0/beta0;
 
-double root = GSL_REAL(gsl_vector_complex_get(eval,0));
+
+std::cout<< "first eigenvalue of mother-matrix is: "<<root<<std::endl;
+// std::cout<< "the others are: " <<std::endl;
+// for (int j = 0; j < absciss_points; ++j)
+//           {
+//             std::cout<< j << " " << GSL_REAL(gsl_vector_complex_get(eval,j)) << " + i* "<< GSL_IMAG(gsl_vector_complex_get(eval,j))<<std::endl;
+//           }
+//           std::cout<<std::endl;
+
+
 
 gsl_vector_complex_view evec_0
            = gsl_matrix_complex_column (evec, 0);
 
+// std::cout<<"geile eigenvectors:"<<std::endl;
+//    for(int j = 0; j<absciss_points; j++){
+//      std::cout<< GSL_REAL(gsl_matrix_complex_get(evec,j,0))<<std::endl;
+//    }
+
+std::cout<<"vector again"<<std::endl;
 for (int j = 0; j < absciss_points; ++j)
           {
             gsl_complex z =
@@ -285,12 +350,10 @@ for (int j = 0; j < absciss_points; ++j)
 
 return root - 1.0;
 
-// std::ofstream fileout3;
-// fileout3.open("Data/VectorMatrixPion_temp_1st.dat");
 
-// fileout3.close();
 
-gsl_vector_complex_free(eval);
+gsl_vector_complex_free(alpha);
+gsl_vector_free(beta);
 gsl_matrix_complex_free(evec);
 gsl_matrix_free(gsl_mother_temp);
 
