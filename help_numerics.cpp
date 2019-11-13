@@ -31,8 +31,8 @@ double z1,z,xm,xl,pp,p3,p2,p1;
 double* x = nullptr;
 double* w = nullptr;
 
-x = new double[n];
-w = new double[n];
+x = new double[n+1]; // WARNING the last entry (n+1) is still there but is the same as n. Make sure the other programs do nut run until the last entry <=n but only <n!
+w = new double[n+1]; // WARNING the last entry (n+1) is still there but is the same as n. Make sure the other programs do nut run until the last entry <=n but only <n!
 
 m=(n+1)/2;
 xm=0.5*(x2+x1);
@@ -60,6 +60,16 @@ for(i=1;i<=m;i++) {
 // Scale the root to the desired interval, and put in its symmetric counterpart. Compute the weight
 // and its symmetric counterpart.
   }
+
+  for(int k = 0;k<n; k++){
+    x[k] = x[k+1]; // WARNING the last entry (n+1) is still there but is the same as n. Make sure the other programs do nut run until the last entry <=n but only <n!
+    w[k] = w[k+1]; // WARNING the last entry (n+1) is still there but is the same as n. Make sure the other programs do nut run until the last entry <=n but only <n! 
+  }
+
+
+
+  // x.pop();
+  // w.pop();
   // Initialises a pointer to a 2d array (abcissas_gl2d) which contains abscissas x[j] and weights
   // w[j] in [0] and [1] respectively.
   // This array is then returned.
