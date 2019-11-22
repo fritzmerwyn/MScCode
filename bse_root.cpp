@@ -220,8 +220,10 @@ double bse_root_eigenlib(double pionmass, double m_c, double* renorm_constants, 
 
     Eigen::ComplexEigenSolver<Eigen::MatrixXcd> ces;
     ces.compute(Ematrix);
-
-    std::cout << "The eigenvalues of A are:" << std::endl << ces.eigenvalues()[absciss_points-1] << std::endl;
+    for(int j=0;j<absciss_points;j++){
+      // ++sd;
+       std::cout << "The eigenvalues of A are:" << std::endl << ces.eigenvalues()[j] << std::endl;
+    }
     std::cout << "The matrix of eigenvectors, V, is:" << std::endl << ces.eigenvectors().col(absciss_points -1).real() << std::endl << std::endl;
 
     double root = ces.eigenvalues()[absciss_points - 1].real();
@@ -233,7 +235,7 @@ double bse_root_eigenlib(double pionmass, double m_c, double* renorm_constants, 
     pionmassfile << "# mu(GeV): "<< mu_renorm << " Lambda_QCD(GeV): "<< Lambda_QCD << " Lambda_t(GeV): "<< Lambda_t << " Lambda_0 " <<Lambda_0<<std::endl;
     pionmassfile << "# q-abscissae used: "<< absciss_points <<" ang_abscissae used: "<< ang_absciss_points <<std::endl;
     pionmassfile << "# z2 is: " << renorm_constants[0] << " zm is: " << renorm_constants[1]<<std::endl;
-    pionmassfile << "Pionmass is : " << pionmass<<std::endl;
+    pionmassfile << "# Pionmass is : " << pionmass<<std::endl;
     pionmassfile << "# p^2"<< " "<< "E(p,P)"<<std::endl;
     for(int j=0;j<absciss_points;j++){
       // ++sd;

@@ -9,7 +9,8 @@ add_executable(maintest2
                  main_test.cpp
                  Dyson_test_2_motherang.cpp
                  help_numerics.cpp
-                 bse_root.cpp)
+                 bse_root.cpp
+                 lookuptable.cpp)
 
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)    # See below (2)

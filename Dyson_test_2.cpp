@@ -142,7 +142,7 @@ std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, doub
   std::complex<double> Imag = {0.0,1.0};
 
   routing_plus = 0.5;
-  routing_minus = routing_plus -1.0;
+  routing_minus = routing_plus - 1.0;
 
   std::complex<double>** mother_temp = nullptr;
   mother_temp = new std::complex<double>*[absciss_points];
