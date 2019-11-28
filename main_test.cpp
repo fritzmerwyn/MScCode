@@ -170,12 +170,105 @@ int main(){
   }
   fileout.close ();
 
+  precalculation(absciss_x,absciss_ang,weights_w,weights_ang);
+
+
 
   double eigenvaluebse=0.0;
   double pimass = 1.0;
 
+  double* q_vec = nullptr;
+  double* z_vec = nullptr;
+  double* x_corners = nullptr;
+  std::complex<double>* y_corners = nullptr;
 
-  // precalculation(absciss_x,absciss_ang,weights_w,weights_ang);
+  q_vec = new double[absciss_points];
+  z_vec = new double[ang_absciss_points];
+  x_corners = new double[4];
+  y_corners = new std::complex<double>[4];
+
+  std::complex<double>*** y_corner = nullptr;
+  y_corner = new std::complex<double>** [2];
+  y_corner[0] = nullptr;
+  y_corner[1] = nullptr;
+  y_corner[0] = new std::complex<double>*[absciss_points];
+  y_corner[1] = new std::complex<double>*[absciss_points];
+  for(int i=0;i<absciss_points;i++){
+    y_corner[0][i] = nullptr;
+    y_corner[0][i] = new std::complex<double>[ang_absciss_points];
+    y_corner[1][i] = nullptr;
+    y_corner[1][i] = new std::complex<double>[ang_absciss_points];
+  }
+
+  std::cout << std::endl <<std::endl;
+
+
+  double routing_plus = 0.5;
+
+  double m_pion = 0.9;
+
+  read_in_data("Data/LOOKUPTABLE1_fine.dat",q_vec,z_vec,y_corner);
+
+  std::complex<double> x_desired =  {1.2, 0.3};
+
+
+  double* g_qz = nullptr;
+  g_qz = new double[2];
+  g_qz = get_qz(x_desired, m_pion, routing_plus);
+
+  int loc1 = locate(q_vec,g_qz[0],absciss_points);
+  int loc2 = locate(z_vec,g_qz[1],ang_absciss_points);
+
+  std::cout<< (g_qz[0]*g_qz[0]) - routing_plus * routing_plus * m_pion * m_pion <<std::endl;
+  std::cout<< (g_qz[1] *(routing_plus * m_pion * g_qz[0])) <<std::endl;
+
+  for(int i=0; i<absciss_points; i++){
+    std::cout<<q_vec[i]<<std::endl;
+  }
+  std::cout<<std::endl;
+  std::cout << g_qz[0] << " " << g_qz[1] << std::endl;
+  std::cout << loc1+1 << " " << q_vec[loc1+1] << " " << loc2 << " " << z_vec[loc2] << std::endl;
+  std::cout << loc1 << " " << q_vec[loc1] << " " << loc2+1 << " " << z_vec[loc2+1] << std::endl
+    << y_corner[0][loc1+2][loc2-3] << " "<< y_corner[0][loc1+2][loc2-4] << std::endl
+    << y_corner[0][loc1+1][loc2-3] << " " <<y_corner[0][loc1+1][loc2-4] << std::endl <<std::endl;
+
+    y_corners[0] = y_corner[0][loc1+1][loc2-3];
+    y_corners[1] = y_corner[0][loc1+1][loc2-4];
+    y_corners[2] = y_corner[0][loc1+2][loc2-4];
+    y_corners[3] = y_corner[0][loc1+2][loc2-3];
+
+    x_corners[0] = q_vec[loc1];
+    x_corners[1] = q_vec[loc1+1];
+    x_corners[2] = z_vec[loc2+1];
+    x_corners[3] = z_vec[loc2];
+
+    // std::complex<double> desired y
+
+    for(int i=200;i<230;i++){
+      std::cout<< i << " " <<y_corner[0][i][75] << std::endl;
+    }
+
+  std::ofstream  fileouta;
+  fileouta.open("Data/y_corner.dat");
+  fileouta<<"#y_corner"<<std::endl;
+
+  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+    for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+        fileouta << q_vec[q_idx] << " " << y_corner[0][q_idx][psi_idx]<<std::endl;
+    }
+  }
+  fileouta.close();
+
+
+  std::complex<double> valuey = funccomplex(x_desired);
+
+  std::cout<<std::endl <<valuey <<std::endl;
+
+  std::complex<double> y_desired = bilinearinterpol(x_desired, x_corners, y_corners, routing_plus, m_pion);
+
+  std::cout<<std::endl << y_desired <<std::endl;
+
+
 
   // std::complex<double>** mother3 = initialize_mother_matrix(pimass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle);
 
@@ -206,50 +299,50 @@ int main(){
   // gmorpionmass<<m_c<<" "<<status<<std::endl;
 // }
 // gmorpionmass.close();
- double q, z, psi, theta, routing_plus, routing_minus;
- std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
- std::complex<double> Imag = {0.0,1.0};
-
- routing_plus = 0.5;
- routing_minus = routing_plus - 1.0;
-
- // std::complex<double>** mother_temp = nullptr;
- // mother_temp = new std::complex<double>*[absciss_points];
- double m_pion = 1.0;
- std::ofstream  fileouta;
- fileouta.open("Data/DressingFunctions_A_and_B_PLUS_complex_pion2.dat");
- fileouta<<"qp"<<"\t"<<"A+"<<"\t"<<"B+"<<"qm"<<"\t"<<"A-"<<"\t"<<"B-"<<std::endl;
- for(int q_idx = 0; q_idx < absciss_points; q_idx++){
-
-   q = exp(0.5*absciss_x[q_idx]);
-
-     for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
-
-         psi = absciss_ang[psi_idx];
-         z = std::cos(psi);
-
-         q_plus_q_minus = std::pow(q,2.0) + routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
-         q_plus_squared = std::pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z - std::pow(routing_plus,2.0)*m_pion*m_pion;
-         q_minus_squared = std::pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z - std::pow(routing_minus,2.0)*m_pion*m_pion;
-
-         std::complex<double> abs_qp = std::sqrt(q_plus_squared);
-         std::complex<double> abs_qm = std::sqrt(q_minus_squared);
-
-         // std::cout<< "sqrt(qp**2) = " << abs_qp << " sqrt(qm**2) = " << abs_qm <<std::endl;
-
-         std::complex<double>* plus_template = interpolation_cmplx(abs_qp, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
-         // std::complex<double>* minus_template = interpolation_cmplx(abs_qm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
-
-         std::complex<double> a_plus = plus_template[0];
-         std::complex<double> b_plus = plus_template[1];
-         // std::complex<double> a_minus = minus_template[0];
-         // std::complex<double> b_minus = minus_template[1];
-
-         fileouta<<q_plus_squared.real() <<" "<< q_plus_squared.imag()<<" "<< a_plus.real()<<" "<<a_plus.imag()<<" "<<b_plus.real()<<" "<<b_plus.imag()<<" "<<std::endl;
-         // << a_minus.real() <<" "<<a_minus.imag()<<" "<<b_minus.real() <<" "<<b_minus.imag()<<std::endl;
-       }
-     }
-     fileouta.close();
+ // double q, z, psi, theta, routing_plus, routing_minus;
+ // std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
+ // std::complex<double> Imag = {0.0,1.0};
+ //
+ // routing_plus = 0.5;
+ // routing_minus = routing_plus - 1.0;
+ //
+ // // std::complex<double>** mother_temp = nullptr;
+ // // mother_temp = new std::complex<double>*[absciss_points];
+ // double m_pion = 1.0;
+ // std::ofstream  fileouta;
+ // fileouta.open("Data/DressingFunctions_A_and_B_PLUS_complex_pion2.dat");
+ // fileouta<<"qp"<<"\t"<<"A+"<<"\t"<<"B+"<<"qm"<<"\t"<<"A-"<<"\t"<<"B-"<<std::endl;
+ // for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+ //
+ //   q = exp(0.5*absciss_x[q_idx]);
+ //
+ //     for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+ //
+ //         psi = absciss_ang[psi_idx];
+ //         z = std::cos(psi);
+ //
+ //         q_plus_q_minus = std::pow(q,2.0) + routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
+ //         q_plus_squared = std::pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z - std::pow(routing_plus,2.0)*m_pion*m_pion;
+ //         q_minus_squared = std::pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z - std::pow(routing_minus,2.0)*m_pion*m_pion;
+ //
+ //         std::complex<double> abs_qp = std::sqrt(q_plus_squared);
+ //         std::complex<double> abs_qm = std::sqrt(q_minus_squared);
+ //
+ //         // std::cout<< "sqrt(qp**2) = " << abs_qp << " sqrt(qm**2) = " << abs_qm <<std::endl;
+ //
+ //         std::complex<double>* plus_template = interpolation_cmplx(abs_qp, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+ //         // std::complex<double>* minus_template = interpolation_cmplx(abs_qm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+ //
+ //         std::complex<double> a_plus = plus_template[0];
+ //         std::complex<double> b_plus = plus_template[1];
+ //         // std::complex<double> a_minus = minus_template[0];
+ //         // std::complex<double> b_minus = minus_template[1];
+ //
+ //         fileouta<<q_plus_squared.real() <<" "<< q_plus_squared.imag()<<" "<< a_plus.real()<<" "<<a_plus.imag()<<" "<<b_plus.real()<<" "<<b_plus.imag()<<" "<<std::endl;
+ //         // << a_minus.real() <<" "<<a_minus.imag()<<" "<<b_minus.real() <<" "<<b_minus.imag()<<std::endl;
+ //       }
+ //     }
+ //     fileouta.close();
 
 
      // std::complex<double>* abtest = interpolation_cmplx(0.121, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
