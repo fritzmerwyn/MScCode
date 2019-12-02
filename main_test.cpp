@@ -174,8 +174,8 @@ int main(){
 
 
 
-  double eigenvaluebse=0.0;
-  double pimass = 1.0;
+  // double eigenvaluebse=0.0;
+  // double pimass = 1.0;
 
   double* q_vec = nullptr;
   double* z_vec = nullptr;
@@ -209,7 +209,7 @@ int main(){
 
   read_in_data("Data/LOOKUPTABLE1_fine.dat",q_vec,z_vec,y_corner);
 
-  std::complex<double> x_desired =  {1.2, 0.3};
+  std::complex<double> x_desired =  {0.6, 0.1};
 
 
   double* g_qz = nullptr;
@@ -220,33 +220,46 @@ int main(){
   int loc2 = locate(z_vec,g_qz[1],ang_absciss_points);
 
   std::cout<< (g_qz[0]*g_qz[0]) - routing_plus * routing_plus * m_pion * m_pion <<std::endl;
-  std::cout<< (g_qz[1] *(routing_plus * m_pion * g_qz[0])) <<std::endl;
+  std::cout<< (g_qz[1] * (2*routing_plus * m_pion * g_qz[0])) <<std::endl;
 
-  for(int i=0; i<absciss_points; i++){
-    std::cout<<q_vec[i]<<std::endl;
-  }
-  std::cout<<std::endl;
+  // for(int i=0; i<absciss_points; i++){
+  //   std::cout<<q_vec[i]<<std::endl;
+  // }
+  std::cout << std::endl;
+  std::cout << "Expected q and z: " << std::endl;
   std::cout << g_qz[0] << " " << g_qz[1] << std::endl;
-  std::cout << loc1+1 << " " << q_vec[loc1+1] << " " << loc2 << " " << z_vec[loc2] << std::endl;
-  std::cout << loc1 << " " << q_vec[loc1] << " " << loc2+1 << " " << z_vec[loc2+1] << std::endl
-    << y_corner[0][loc1+2][loc2-3] << " "<< y_corner[0][loc1+2][loc2-4] << std::endl
-    << y_corner[0][loc1+1][loc2-3] << " " <<y_corner[0][loc1+1][loc2-4] << std::endl <<std::endl;
+  std::cout << "Calculated q's and z's: " << std::endl;
+  std::cout << loc1 << " " << q_vec[loc1] << " " << loc2 << " " << z_vec[loc2] << std::endl;
+  std::cout << loc1+1 << " " << q_vec[loc1+1] << " " << loc2+1 << " " << z_vec[loc2+1] << std::endl;
+  std::cout << " Calculated f(x) with Calculated q and z: " << std::endl;
+  std::cout  << y_corner[0][loc1][loc2+1] << " "<< y_corner[0][loc1+1][loc2+1] << std::endl
+    << y_corner[0][loc1][loc2] << " " <<y_corner[0][loc1+1][loc2] << std::endl <<std::endl;
 
-    y_corners[0] = y_corner[0][loc1+1][loc2-3];
-    y_corners[1] = y_corner[0][loc1+1][loc2-4];
-    y_corners[2] = y_corner[0][loc1+2][loc2-4];
-    y_corners[3] = y_corner[0][loc1+2][loc2-3];
+    y_corners[0] = y_corner[0][loc1][loc2];
+    y_corners[1] = y_corner[0][loc1+1][loc2];
+    y_corners[2] = y_corner[0][loc1+1][loc2+1];
+    y_corners[3] = y_corner[0][loc1][loc2+1];
 
     x_corners[0] = q_vec[loc1];
     x_corners[1] = q_vec[loc1+1];
     x_corners[2] = z_vec[loc2+1];
     x_corners[3] = z_vec[loc2];
 
-    // std::complex<double> desired y
+    std::complex<double> x_d1,x_d2,x_d3,x_d4;
 
-    for(int i=200;i<230;i++){
-      std::cout<< i << " " <<y_corner[0][i][75] << std::endl;
-    }
+
+    x_d1 = {(q_vec[loc1]*q_vec[loc1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2] * (2*routing_plus * m_pion * q_vec[loc1]))};
+    x_d2 = {(q_vec[loc1+1]*q_vec[loc1+1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2] * (2*routing_plus * m_pion * q_vec[loc1+1]))};
+    x_d3 = {(q_vec[loc1+1]*q_vec[loc1+1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2+1] * (2*routing_plus * m_pion * q_vec[loc1+1]))};
+    x_d4 = {(q_vec[loc1]*q_vec[loc1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2+1] * (2*routing_plus * m_pion * q_vec[loc1]))};
+
+    std::cout<<" Calculated x_c's" << std::endl;
+    std::cout  << x_d4 << " "<< x_d3 << std::endl
+      << x_d1 << " " << x_d2 << std::endl <<std::endl;
+
+    // for(int i=200;i<230;i++){
+    //   std::cout<< i << " " <<y_corner[0][i][75] << std::endl;
+    // }
 
   std::ofstream  fileouta;
   fileouta.open("Data/y_corner.dat");
@@ -260,13 +273,13 @@ int main(){
   fileouta.close();
 
 
-  std::complex<double> valuey = funccomplex(x_desired);
+  std::complex<double> valuey = funccomplex(std::sqrt(x_desired));
 
-  std::cout<<std::endl <<valuey <<std::endl;
+  std::cout<<" Exact f(x) " << std::endl <<valuey <<std::endl;
 
-  std::complex<double> y_desired = bilinearinterpol(x_desired, x_corners, y_corners, routing_plus, m_pion);
+  std::complex<double> y_desired = bilinearinterpol(g_qz, x_corners, y_corners, routing_plus, m_pion);
 
-  std::cout<<std::endl << y_desired <<std::endl;
+  std::cout<<" Interpolated f(x)" << std::endl << y_desired <<std::endl;
 
 
 
