@@ -149,7 +149,7 @@ void read_in_data(const std::string filename, double* q_vec, double* z_vec, std:
 
 double* get_qz(std::complex<double> x0, double m_pion, double routing_plus){
   double q = std::sqrt(x0.real() + routing_plus * routing_plus * m_pion * m_pion);
-  double z = (x0.imag())/(routing_plus * m_pion * q);
+  double z = (x0.imag())/(2*routing_plus * m_pion * q);
 
   double* got_qz = nullptr;
   got_qz = new double[2];
@@ -159,12 +159,12 @@ double* get_qz(std::complex<double> x0, double m_pion, double routing_plus){
   return got_qz;
 }
 
-std::complex<double> bilinearinterpol(std::complex<double> x0, double* x_corners, std::complex<double>* y_corners, double routing_plus, double m_pion){
+std::complex<double> bilinearinterpol(double* qz, double* x_corners, std::complex<double>* y_corners, double routing_plus, double m_pion){
   double t,u;
 
-  double* qz = nullptr;
-
-  qz = get_qz(x0,m_pion,routing_plus);
+  // double* qz = nullptr;
+  //
+  // qz = get_qz(x0,m_pion,routing_plus);
 
   t = (qz[0] - x_corners[0])/(x_corners[1]-x_corners[0]);
   u = (qz[1] - x_corners[2])/(x_corners[3]-x_corners[2]);
