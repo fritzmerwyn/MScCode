@@ -170,7 +170,10 @@ int main(){
   }
   fileout.close ();
 
+
   precalculation(absciss_x,absciss_ang,weights_w,weights_ang);
+
+  std::cout << " OK " << std::endl;
 
 
 
@@ -242,8 +245,8 @@ int main(){
 
     x_corners[0] = q_vec[loc1];
     x_corners[1] = q_vec[loc1+1];
-    x_corners[2] = z_vec[loc2+1];
-    x_corners[3] = z_vec[loc2];
+    x_corners[2] = z_vec[loc2];
+    x_corners[3] = z_vec[loc2+1];
 
     std::complex<double> x_d1,x_d2,x_d3,x_d4;
 
@@ -261,16 +264,16 @@ int main(){
     //   std::cout<< i << " " <<y_corner[0][i][75] << std::endl;
     // }
 
-  std::ofstream  fileouta;
-  fileouta.open("Data/y_corner.dat");
-  fileouta<<"#y_corner"<<std::endl;
-
-  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
-    for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
-        fileouta << q_vec[q_idx] << " " << y_corner[0][q_idx][psi_idx]<<std::endl;
-    }
-  }
-  fileouta.close();
+  // std::ofstream  fileouta;
+  // fileouta.open("Data/y_corner.dat");
+  // fileouta<<"#y_corner"<<std::endl;
+  //
+  // for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+  //   for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+  //       fileouta << q_vec[q_idx] << " " << y_corner[0][q_idx][psi_idx]<<std::endl;
+  //   }
+  // }
+  // fileouta.close();
 
 
   std::complex<double> valuey = funccomplex(std::sqrt(x_desired));
