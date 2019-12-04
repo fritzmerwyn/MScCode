@@ -13,6 +13,7 @@
 #define mu_renorm 19.0
 #define PionMass 0.120
 #define alpha_angle 1.7
+#define PI_MAX 0.5
 
 // Numerical Parameters
 #define loggrid
@@ -20,6 +21,8 @@
 #define absciss_points 200
 #define ang_absciss_points 100
 #define ang_absciss_points_2 12
+#define BSE_absciss_points 64
+#define BSE_ang_absciss_points 32
 #define max_step 2000
 #define max_iter 200
 

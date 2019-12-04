@@ -17,6 +17,6 @@ double qgaus1(double (*func)(double), double* x, double* w);
 int locate(double* xx, double x, int length);
 void read_in_data(const std::string filename, double* q_vec, double* z_vec, std::complex<double>*** y_vals);
 double* get_qz(std::complex<double> x0, double m_pion, double routing_plus);
-std::complex<double> bilinearinterpol(double* qz, double* x_corners, std::complex<double>* y_corners, double routing_plus, double m_pion);
+std::complex<double> bilinearinterpol(double q, double z, double* x_corners, std::complex<double>* y_corners);
 
 #endif

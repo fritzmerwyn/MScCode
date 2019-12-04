@@ -113,7 +113,6 @@ void read_in_data(const std::string filename, double* q_vec, double* z_vec, std:
   std::complex<double> Imag = {0.0,1.0};
   double x0,x1,x2,x3,x4,x5;
   int i,j,k;
-  i=0;
   j=0;
   k=0;
   std::ifstream inputfile(filename);
@@ -124,19 +123,18 @@ void read_in_data(const std::string filename, double* q_vec, double* z_vec, std:
     exit(1);   // call system to stop
   }
 
-  while (inputfile >> x0 >> x1 >> x2 >> x3) {
+  while (inputfile >> x0 >> x1 >> x2 >> x3 >> x4 >> x5) {
 
       if(k == 0){
         q_vec[j] = x0;
       }
       if(j == 0){
-        z_vec[i] = x1;
+        z_vec[k] = x1;
       }
 
-      y_vals[0][j][k] = x2 + Imag*x3;
-      // y_vals[1][j][k] = x4 + Imag*x5;
+      y_vals[0][j][k] = x2 + Imag*x3; // A+
+      y_vals[1][j][k] = x4 + Imag*x5; // B+
 
-      i++;
       k++;
       if(k == ang_absciss_points){
         k=0;
@@ -149,7 +147,7 @@ void read_in_data(const std::string filename, double* q_vec, double* z_vec, std:
 
 double* get_qz(std::complex<double> x0, double m_pion, double routing_plus){
   double q = std::sqrt(x0.real() + routing_plus * routing_plus * m_pion * m_pion);
-  double z = (x0.imag())/(2*routing_plus * m_pion * q);
+  double z = (x0.imag())/(2.0*routing_plus * m_pion * q);
 
   double* got_qz = nullptr;
   got_qz = new double[2];
@@ -159,15 +157,15 @@ double* get_qz(std::complex<double> x0, double m_pion, double routing_plus){
   return got_qz;
 }
 
-std::complex<double> bilinearinterpol(double* qz, double* x_corners, std::complex<double>* y_corners, double routing_plus, double m_pion){
+std::complex<double> bilinearinterpol(double q, double z, double* x_corners, std::complex<double>* y_corners){
   double t,u;
 
   // double* qz = nullptr;
   //
   // qz = get_qz(x0,m_pion,routing_plus);
 
-  t = (qz[0] - x_corners[0])/(x_corners[1]-x_corners[0]);
-  u = (qz[1] - x_corners[2])/(x_corners[3]-x_corners[2]);
+  t = (q - x_corners[0])/(x_corners[1]-x_corners[0]);
+  u = (z - x_corners[2])/(x_corners[3]-x_corners[2]);
 
   return (1-t)*(1-u)*y_corners[0] + t*(1-u)*y_corners[1] + t*u*y_corners[2] + (1-t)*u*y_corners[3];
 }

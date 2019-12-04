@@ -39,12 +39,18 @@ int main(){
   // ##### The gauleg function is called twice, thought, because of angular integration *and* momentum integration. #####
 
   double** x_and_w = nullptr;
+  double** BSE_x_and_w = nullptr;
   double** x_and_w_ang = nullptr;
+  double** BSE_x_and_w_ang = nullptr;
   double** x_and_w_ang_2 = nullptr;
   double* weights_w = nullptr;
+  double* BSE_weights_w = nullptr;
   double* absciss_x = nullptr;
+  double* BSE_absciss_x = nullptr;
   double* absciss_ang = nullptr;
+  double* BSE_absciss_ang = nullptr;
   double* weights_ang = nullptr;
+  double* BSE_weights_ang = nullptr;
   double* absciss_ang_2 = nullptr;
   double* weights_ang_2 = nullptr;
 
@@ -65,6 +71,8 @@ int main(){
 
   std::cout<<std::endl<< "Log-Grid!" << std::endl << std::endl;
   x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA), absciss_points);
+  BSE_x_and_w = gauleg(log(LAMBDA_MIN*LAMBDA_MIN),log(LAMBDA), BSE_absciss_points);
+
 
   #else
 
@@ -76,8 +84,13 @@ int main(){
   // ##### Splitting 2d array up (momentum) #####
   absciss_x = x_and_w[0]; // x_and_w[0];
   weights_w = x_and_w[1]; // x_and_w[1];
+  BSE_absciss_x = BSE_x_and_w[0]; // x_and_w[0];
+  BSE_weights_w = BSE_x_and_w[1]; // x_and_w[1];
+
 
   x_and_w_ang = gauleg(0.0,M_PI, ang_absciss_points);
+  BSE_x_and_w_ang = gauleg(0.0,M_PI, BSE_ang_absciss_points);
+
 
   x_and_w_ang_2 = gauleg(0.0,M_PI, ang_absciss_points_2); // For second angular integral in BSE. (theta)
 
@@ -85,6 +98,9 @@ int main(){
 
   absciss_ang = x_and_w_ang[0];
   weights_ang = x_and_w_ang[1];
+
+  BSE_absciss_ang = BSE_x_and_w_ang[0];
+  BSE_weights_ang = BSE_x_and_w_ang[1];
 
   absciss_ang_2 = x_and_w_ang_2[0];
   weights_ang_2 = x_and_w_ang_2[1];
@@ -171,7 +187,7 @@ int main(){
   fileout.close ();
 
 
-  precalculation(absciss_x,absciss_ang,weights_w,weights_ang);
+  // precalculation(m_c, renorm_constants, a_vals, b_vals, absciss_x,absciss_ang,weights_w,weights_ang,eta);
 
   std::cout << " OK " << std::endl;
 
@@ -183,12 +199,15 @@ int main(){
   double* q_vec = nullptr;
   double* z_vec = nullptr;
   double* x_corners = nullptr;
-  std::complex<double>* y_corners = nullptr;
+  std::complex<double>* a_corners = nullptr;
+  std::complex<double>* b_corners = nullptr;
 
   q_vec = new double[absciss_points];
   z_vec = new double[ang_absciss_points];
   x_corners = new double[4];
-  y_corners = new std::complex<double>[4];
+  a_corners = new std::complex<double>[4];
+  b_corners = new std::complex<double>[4];
+
 
   std::complex<double>*** y_corner = nullptr;
   y_corner = new std::complex<double>** [2];
@@ -203,62 +222,68 @@ int main(){
     y_corner[1][i] = new std::complex<double>[ang_absciss_points];
   }
 
+
   std::cout << std::endl <<std::endl;
 
 
   double routing_plus = 0.5;
 
-  double m_pion = 0.9;
+  // double m_pion = 1.0;
 
-  read_in_data("Data/LOOKUPTABLE1_fine.dat",q_vec,z_vec,y_corner);
+  read_in_data("Data/DressingFunctionsABCmplxInterpol_even_rougherPI_MAX.dat",q_vec,z_vec,y_corner);
+  // read_in_data("Data/DressingFunctionsABCmplxInterpol_rough05gev.dat",q_vec,z_vec,y_corner);
 
-  std::complex<double> x_desired =  {0.6, 0.1};
-
-
-  double* g_qz = nullptr;
-  g_qz = new double[2];
-  g_qz = get_qz(x_desired, m_pion, routing_plus);
-
-  int loc1 = locate(q_vec,g_qz[0],absciss_points);
-  int loc2 = locate(z_vec,g_qz[1],ang_absciss_points);
-
-  std::cout<< (g_qz[0]*g_qz[0]) - routing_plus * routing_plus * m_pion * m_pion <<std::endl;
-  std::cout<< (g_qz[1] * (2*routing_plus * m_pion * g_qz[0])) <<std::endl;
-
-  // for(int i=0; i<absciss_points; i++){
-  //   std::cout<<q_vec[i]<<std::endl;
-  // }
-  std::cout << std::endl;
-  std::cout << "Expected q and z: " << std::endl;
-  std::cout << g_qz[0] << " " << g_qz[1] << std::endl;
-  std::cout << "Calculated q's and z's: " << std::endl;
-  std::cout << loc1 << " " << q_vec[loc1] << " " << loc2 << " " << z_vec[loc2] << std::endl;
-  std::cout << loc1+1 << " " << q_vec[loc1+1] << " " << loc2+1 << " " << z_vec[loc2+1] << std::endl;
-  std::cout << " Calculated f(x) with Calculated q and z: " << std::endl;
-  std::cout  << y_corner[0][loc1][loc2+1] << " "<< y_corner[0][loc1+1][loc2+1] << std::endl
-    << y_corner[0][loc1][loc2] << " " <<y_corner[0][loc1+1][loc2] << std::endl <<std::endl;
-
-    y_corners[0] = y_corner[0][loc1][loc2];
-    y_corners[1] = y_corner[0][loc1+1][loc2];
-    y_corners[2] = y_corner[0][loc1+1][loc2+1];
-    y_corners[3] = y_corner[0][loc1][loc2+1];
-
-    x_corners[0] = q_vec[loc1];
-    x_corners[1] = q_vec[loc1+1];
-    x_corners[2] = z_vec[loc2];
-    x_corners[3] = z_vec[loc2+1];
-
-    std::complex<double> x_d1,x_d2,x_d3,x_d4;
+  // std::complex<double> x_desired =  {0.6, 0.1};
+  //
+  // x_desired = {x_desired.real() + 1.0 , x_desired.imag()};
+  //
+  // std::cout<< x_desired.real() << std::endl;
 
 
-    x_d1 = {(q_vec[loc1]*q_vec[loc1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2] * (2*routing_plus * m_pion * q_vec[loc1]))};
-    x_d2 = {(q_vec[loc1+1]*q_vec[loc1+1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2] * (2*routing_plus * m_pion * q_vec[loc1+1]))};
-    x_d3 = {(q_vec[loc1+1]*q_vec[loc1+1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2+1] * (2*routing_plus * m_pion * q_vec[loc1+1]))};
-    x_d4 = {(q_vec[loc1]*q_vec[loc1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2+1] * (2*routing_plus * m_pion * q_vec[loc1]))};
-
-    std::cout<<" Calculated x_c's" << std::endl;
-    std::cout  << x_d4 << " "<< x_d3 << std::endl
-      << x_d1 << " " << x_d2 << std::endl <<std::endl;
+  // double* g_qz = nullptr;
+  // g_qz = new double[2];
+  // g_qz = get_qz(x_desired, m_pion, routing_plus);
+  //
+  // int loc1 = locate(q_vec,g_qz[0],absciss_points);
+  // int loc2 = locate(z_vec,g_qz[1],ang_absciss_points);
+  //
+  // std::cout<< (g_qz[0]*g_qz[0]) - routing_plus * routing_plus * m_pion * m_pion <<std::endl;
+  // std::cout<< (g_qz[1] * (2*routing_plus * m_pion * g_qz[0])) <<std::endl;
+  //
+  // // for(int i=0; i<absciss_points; i++){
+  // //   std::cout<<q_vec[i]<<std::endl;
+  // // }
+  // std::cout << std::endl;
+  // std::cout << "Expected q and z: " << std::endl;
+  // std::cout << g_qz[0] << " " << g_qz[1] << std::endl;
+  // std::cout << "Calculated q's and z's: " << std::endl;
+  // std::cout << loc1 << " " << q_vec[loc1] << " " << loc2 << " " << z_vec[loc2] << std::endl;
+  // std::cout << loc1+1 << " " << q_vec[loc1+1] << " " << loc2+1 << " " << z_vec[loc2+1] << std::endl;
+  // std::cout << " Calculated f(x) with Calculated q and z: " << std::endl;
+  // std::cout  << y_corner[0][loc1][loc2+1] << " "<< y_corner[0][loc1+1][loc2+1] << std::endl
+  //   << y_corner[0][loc1][loc2] << " " <<y_corner[0][loc1+1][loc2] << std::endl <<std::endl;
+  //
+  //   y_corners[0] = y_corner[0][loc1][loc2];
+  //   y_corners[1] = y_corner[0][loc1+1][loc2];
+  //   y_corners[2] = y_corner[0][loc1+1][loc2+1];
+  //   y_corners[3] = y_corner[0][loc1][loc2+1];
+  //
+  //   x_corners[0] = q_vec[loc1];
+  //   x_corners[1] = q_vec[loc1+1];
+  //   x_corners[2] = z_vec[loc2];
+  //   x_corners[3] = z_vec[loc2+1];
+  //
+  //   std::complex<double> x_d1,x_d2,x_d3,x_d4;
+  //
+  //
+  //   x_d1 = {(q_vec[loc1]*q_vec[loc1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2] * (2*routing_plus * m_pion * q_vec[loc1]))};
+  //   x_d2 = {(q_vec[loc1+1]*q_vec[loc1+1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2] * (2*routing_plus * m_pion * q_vec[loc1+1]))};
+  //   x_d3 = {(q_vec[loc1+1]*q_vec[loc1+1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2+1] * (2*routing_plus * m_pion * q_vec[loc1+1]))};
+  //   x_d4 = {(q_vec[loc1]*q_vec[loc1]) - routing_plus * routing_plus * m_pion * m_pion,(z_vec[loc2+1] * (2*routing_plus * m_pion * q_vec[loc1]))};
+  //
+  //   std::cout<<" Calculated x_c's" << std::endl;
+  //   std::cout  << x_d4 << " "<< x_d3 << std::endl
+  //     << x_d1 << " " << x_d2 << std::endl <<std::endl;
 
     // for(int i=200;i<230;i++){
     //   std::cout<< i << " " <<y_corner[0][i][75] << std::endl;
@@ -276,29 +301,32 @@ int main(){
   // fileouta.close();
 
 
-  std::complex<double> valuey = funccomplex(std::sqrt(x_desired));
-
-  std::cout<<" Exact f(x) " << std::endl <<valuey <<std::endl;
-
-  std::complex<double> y_desired = bilinearinterpol(g_qz, x_corners, y_corners, routing_plus, m_pion);
-
-  std::cout<<" Interpolated f(x)" << std::endl << y_desired <<std::endl;
+  // std::complex<double> valuey = funccomplex(std::sqrt(x_desired));
+  //
+  // std::cout<<" Exact f(x) " << std::endl <<valuey <<std::endl;
+  //
+  // std::complex<double> y_desired = bilinearinterpol(g_qz, x_corners, y_corners, routing_plus, m_pion);
+  //
+  // std::cout<<" Interpolated f(x)" << std::endl << y_desired <<std::endl;
 
 
 
   // std::complex<double>** mother3 = initialize_mother_matrix(pimass, m_c, renorm_constants,a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta, alpha_angle);
-
+//
   // for(int i=1; i<10; i++){
   //   pimass = pimass + 0.0002*i;
   //   eigenvaluebse = bse_root(pimass, m_c, renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
   //   std::cout<< "Pionmass Input = "<< pimass << "eigenvalue = " << eigenvaluebse <<std::endl;
   // }
-  // double status = 0.0;
+  double status = 0.0;
   // double status2 = 0.0;
   // // status = bse_root_eigenlib(0.12094, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
   //
-  // std::complex<double>*** theta_matrix = initialize_theta_matrix(renorm_constants, absciss_x, absciss_ang,weights_w,  weights_ang,absciss_ang_2,weights_ang_2, eta, alpha_angle);
-  // status = regulaFalsi(0.110,0.140,1e-8,m_c, renorm_constants, a_vals, b_vals, absciss_x,absciss_ang, weights_w, weights_ang, eta, theta_matrix);
+  std::complex<double>*** theta_matrix = initialize_theta_matrix(renorm_constants, BSE_absciss_x, BSE_absciss_ang, BSE_weights_w, BSE_weights_ang, eta, alpha_angle);
+
+  // std::cout << " OK " << std::endl;
+
+  status = regulaFalsi(0.110,0.40,1e-8, a_corners, b_corners, BSE_absciss_x,BSE_absciss_ang, theta_matrix, q_vec, z_vec, x_corners, y_corner);
 
   // bse_root_eigenlib(0.11982047108638232, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta);
   // bse_root_eigenlib(0.11982, m_c,  renorm_constants,  a_vals,  b_vals,  absciss_x, absciss_ang,  weights_w,  weights_ang,  eta, theta_matrix);
