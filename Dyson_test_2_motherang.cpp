@@ -135,58 +135,59 @@ double** initialize_dressing_functionAB(double a0, double b0){
 
 }
 
-std::complex <double>*** initialize_theta_matrix(double* renorm_constants,double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta, double alpha){
+std::complex <double>*** initialize_theta_matrix(double* renorm_constants,double* BSE_absciss_x, double* BSE_absciss_ang, double* BSE_weights_w, double* BSE_weights_ang, double eta, double alpha){
 
   std::complex<double>*** temp_mother_matrix = nullptr;
-  temp_mother_matrix = new std::complex<double>**[ang_absciss_points];
+  temp_mother_matrix = new std::complex<double>**[BSE_ang_absciss_points];
 
-  for(int i=0;i<ang_absciss_points;i++){
+  for(int i=0;i<BSE_ang_absciss_points;i++){
     temp_mother_matrix[i] = nullptr;
-    temp_mother_matrix[i] = new std::complex<double>*[absciss_points];
+    temp_mother_matrix[i] = new std::complex<double>*[BSE_absciss_points];
   }
 
-  for(int i=0;i<ang_absciss_points;i++){
-    for(int j = 0; j<absciss_points; j++){
+  for(int i=0;i<BSE_ang_absciss_points;i++){
+    for(int j = 0; j<BSE_absciss_points; j++){
     temp_mother_matrix[i][j] = nullptr;
-    temp_mother_matrix[i][j] = new std::complex<double>[absciss_points];
+    temp_mother_matrix[i][j] = new std::complex<double>[BSE_absciss_points];
     }
   }
 
-  double q, z, psi, theta;
+  double q, z, psi, theta, real_matrix_entry_2, imag_matrix_entry_2, realMTtemp, imagMTtemp;
   std::complex<double> matrix_entry, p, k_squared;
   std::complex<double> Imag = {0.0,1.0};
 
-  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+#pragma omp parallel for default(none) shared(BSE_absciss_x,BSE_absciss_ang,alpha,renorm_constants,BSE_weights_ang,BSE_weights_w,eta,temp_mother_matrix) private(p,q,z,psi,theta, k_squared,realMTtemp,imagMTtemp) reduction(+:real_matrix_entry_2,imag_matrix_entry_2)
 
-    q = exp(0.5*absciss_x[q_idx]);
+  for(int q_idx = 0; q_idx < BSE_absciss_points; q_idx++){
 
-    for(int p_idx = 0; p_idx < absciss_points; p_idx++){
+    q = exp(0.5*BSE_absciss_x[q_idx]);
 
-      p = exp(0.5*absciss_x[p_idx]);
+    for(int p_idx = 0; p_idx < BSE_absciss_points; p_idx++){
+
+      p = exp(0.5*BSE_absciss_x[p_idx]);
 
       std::complex<double> matrix_entry = {0.0,0.0};
       // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
 
-      for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+      for(int psi_idx=0; psi_idx < BSE_ang_absciss_points; psi_idx++){
 
-          psi = absciss_ang[psi_idx];
+          psi = BSE_absciss_ang[psi_idx];
           z = std::cos(psi);
 
-          double real_matrix_entry_2=0.0;
-          double imag_matrix_entry_2=0.0;
-          double realMTtemp=0.0;
-          double imagMTtemp=0.0;
+          real_matrix_entry_2=0.0;
+          imag_matrix_entry_2=0.0;
+          realMTtemp=0.0;
+          imagMTtemp=0.0;
 
-#pragma omp parallel for default(none) shared(absciss_ang,p,q,q_idx,z,alpha,psi,psi_idx,renorm_constants,weights_ang,weights_w,eta) private(theta, k_squared,realMTtemp,imagMTtemp) reduction(+:real_matrix_entry_2,imag_matrix_entry_2)
-        for(int theta_idx=0; theta_idx < ang_absciss_points; theta_idx++){
+        for(int theta_idx=0; theta_idx < BSE_ang_absciss_points; theta_idx++){
 
-          theta = absciss_ang[theta_idx];
+          theta = BSE_absciss_ang[theta_idx];
 
           k_squared = p*p + q*q - 2.0*p*q*(z*std::cos(alpha) + std::sin(psi)*std::cos(theta)*std::sin(alpha));
-          realMTtemp= ((running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).real()) *((4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*weights_ang[psi_idx] * std::sin(psi)*std::sin(psi));
-          imagMTtemp= ((running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).imag()) *((4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*weights_w[q_idx]*q*q*q*q*weights_ang[psi_idx] * std::sin(psi)*std::sin(psi));
-          real_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(realMTtemp));
-          imag_matrix_entry_2 += (weights_ang[theta_idx]*std::sin(theta)*(imagMTtemp));
+          realMTtemp= ((running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).real()) *((4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*BSE_weights_w[q_idx]*q*q*q*q*BSE_weights_ang[psi_idx] * std::sin(psi)*std::sin(psi));
+          imagMTtemp= ((running_coupling_MarisTandy_cmplx(k_squared,eta)/k_squared).imag()) *((4.0/3.0)*4.0*M_PI*3.0*2.0*M_PI*(1.0/2.0)*std::pow((1.0/(2.0*M_PI)),4.0)*std::pow(renorm_constants[0],2.0)*BSE_weights_w[q_idx]*q*q*q*q*BSE_weights_ang[psi_idx] * std::sin(psi)*std::sin(psi));
+          real_matrix_entry_2 += (BSE_weights_ang[theta_idx]*std::sin(theta)*(realMTtemp));
+          imag_matrix_entry_2 += (BSE_weights_ang[theta_idx]*std::sin(theta)*(imagMTtemp));
 
         }
 
@@ -203,58 +204,83 @@ std::complex <double>*** initialize_theta_matrix(double* renorm_constants,double
   return temp_mother_matrix;
 }
 
-std::complex <double>** initialize_mother_matrix(double m_pion, double m_c, double* renorm_constants, double* a_vals, double* b_vals, double* absciss_x, double* absciss_ang, double* weights_w, double* weights_ang, double eta, double alpha, std::complex<double>*** theta_matrix){
+std::complex <double>** initialize_mother_matrix(double m_pion, std::complex<double>* a_corners, std::complex<double>* b_corners, double* BSE_absciss_x, double* BSE_absciss_ang, std::complex<double>*** theta_matrix, double* q_vec, double* z_vec, double* x_corners, std::complex<double>*** y_corner){
 
   double q, z, psi, theta, routing_plus, routing_minus;
   std::complex<double> matrix_entry,q_plus_q_minus, q_plus_squared, q_minus_squared, p, k_squared;
   std::complex<double> Imag = {0.0,1.0};
 
+
+  double delta_pion = PI_MAX - m_pion;
+
   routing_plus = 0.5;
   routing_minus = routing_plus - 1.0;
 
   std::complex<double>** mother_temp = nullptr;
-  mother_temp = new std::complex<double>*[absciss_points];
+  mother_temp = new std::complex<double>*[BSE_absciss_points];
 
 // #pragma omp parallel for default(none) shared(mother_temp)
-  for(int i=0;i<absciss_points;i++){
+  for(int i=0;i<BSE_absciss_points;i++){
     mother_temp[i] = nullptr;
-    mother_temp[i] = new std::complex<double>[absciss_points];
+    mother_temp[i] = new std::complex<double>[BSE_absciss_points];
   }
   // std::ofstream  fileouta;
   // fileouta.open("Data/DressingFunctions_A_and_B_PLUS_complex.dat");
   // fileouta<<"qp"<<"\t"<<"A+"<<"\t"<<"B+"<<"qm"<<"\t"<<"A-"<<"\t"<<"B-"<<std::endl;
-  for(int q_idx = 0; q_idx < absciss_points; q_idx++){
+  for(int q_idx = 0; q_idx < BSE_absciss_points; q_idx++){
 
-    q = exp(0.5*absciss_x[q_idx]);
+    q = exp(0.5*BSE_absciss_x[q_idx]);
 
-    for(int p_idx = 0; p_idx < absciss_points; p_idx++){
+    for(int p_idx = 0; p_idx < BSE_absciss_points; p_idx++){
 
-      p = exp(0.5*absciss_x[p_idx]);
+      // p = exp(0.5*absciss_x[p_idx]);
 
       std::complex<double> matrix_entry = {0.0,0.0};
       // k_squared = p*p + q*q - 2.0*p*q*(z*cos(alpha)+sin(psi)*cos(theta)*sin(alpha));
 
-      for(int psi_idx=0; psi_idx < ang_absciss_points; psi_idx++){
+      for(int psi_idx=0; psi_idx < BSE_ang_absciss_points; psi_idx++){
 
-          psi = absciss_ang[psi_idx];
+          psi = BSE_absciss_ang[psi_idx];
           z = std::cos(psi);
 
           q_plus_q_minus = std::pow(q,2.0) + routing_minus*q*Imag*m_pion*z + routing_plus*q*Imag*m_pion*z - routing_plus*routing_minus*m_pion*m_pion;
           q_plus_squared = std::pow(q,2.0) + 2.0*routing_plus*q*Imag*m_pion*z - std::pow(routing_plus,2.0)*m_pion*m_pion;
           q_minus_squared = std::pow(q,2.0) + 2.0*routing_minus*q*Imag*m_pion*z - std::pow(routing_minus,2.0)*m_pion*m_pion;
 
-          std::complex<double> abs_qp = std::sqrt(q_plus_squared);
-          std::complex<double> abs_qm = std::sqrt(q_minus_squared);
+          // std::complex<double> abs_qp = std::sqrt(q_plus_squared);
+          // std::complex<double> abs_qm = std::sqrt(q_minus_squared);
 
           // std::cout<< "sqrt(qp**2) = " << abs_qp << " sqrt(qm**2) = " << abs_qm <<std::endl;
 
-          std::complex<double>* plus_template = interpolation_cmplx(abs_qp, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
-          std::complex<double>* minus_template = interpolation_cmplx(abs_qm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+          // std::complex<double>* plus_template = interpolation_cmplx(abs_qp, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
+          // std::complex<double>* minus_template = interpolation_cmplx(abs_qm, m_c, renorm_constants, a_vals, b_vals, absciss_x, absciss_ang, weights_w, weights_ang, eta);
 
-          std::complex<double> a_plus = plus_template[0];
-          std::complex<double> b_plus = plus_template[1];
-          std::complex<double> a_minus = minus_template[0];
-          std::complex<double> b_minus = minus_template[1];
+          double* g_qz = get_qz(q_plus_squared,m_pion+delta_pion,routing_plus);
+
+          unsigned int loc1 = locate(q_vec,g_qz[0],absciss_points);
+          unsigned int loc2 = locate(z_vec,g_qz[1],ang_absciss_points);
+
+          a_corners[0] = y_corner[0][loc1][loc2];
+          a_corners[1] = y_corner[0][loc1+1][loc2];
+          a_corners[2] = y_corner[0][loc1+1][loc2+1];
+          a_corners[3] = y_corner[0][loc1][loc2+1];
+
+          b_corners[0] = y_corner[1][loc1][loc2];
+          b_corners[1] = y_corner[1][loc1+1][loc2];
+          b_corners[2] = y_corner[1][loc1+1][loc2+1];
+          b_corners[3] = y_corner[1][loc1][loc2+1];
+
+          x_corners[0] = q_vec[loc1];
+          x_corners[1] = q_vec[loc1+1];
+          x_corners[2] = z_vec[loc2];
+          x_corners[3] = z_vec[loc2+1];
+
+
+
+          std::complex<double> a_plus = bilinearinterpol(g_qz[0],g_qz[1],x_corners,a_corners);
+          std::complex<double> b_plus = bilinearinterpol(g_qz[0],g_qz[1],x_corners,b_corners);
+          std::complex<double> a_minus = std::conj(a_plus);
+          std::complex<double> b_minus = std::conj(b_plus);
 
 
         matrix_entry += theta_matrix[psi_idx][p_idx][q_idx]*
@@ -530,7 +556,6 @@ std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, do
   sa_imag = 0.0;
   sb_imag = 0.0;
 
-
   for(int q_idx = 0; q_idx < absciss_points; q_idx++){
       q = std::exp(0.5*absciss_x[q_idx]);
 
@@ -568,8 +593,11 @@ std::complex<double>* interpolation_cmplx(std::complex<double> p, double m_c, do
               (q*q * std::pow(a_vals[q_idx],2.0) + std::pow(b_vals[q_idx],2.0)))) *
               (weights_ang[ang_idx] * (std::sin(yota)*std::sin(yota)*constant_b_imag)) ;
 
+        // fileoutD<< q << "\t" << z << "\t" << sa_real << "\t" << sa_imag << "\t" << sb_real <<"\t" << sb_imag << std::endl;
+
       }
   }
+
   sa = {sa_real,sa_imag};
   sb = {sb_real,sb_imag};
 
